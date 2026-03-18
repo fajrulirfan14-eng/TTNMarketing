@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#b3874f">
+<link rel="icon" type="image/png" sizes="32x32" href="ikon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="ikon-48.png">
+<link rel="icon" type="image/png" sizes="512x512" href="ikon-512.png">
+<!-- Apple Touch Icon -->
+<link rel="apple-touch-icon" sizes="192x192" href="ikon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>Marketing TTN</title>
+
+<link rel="stylesheet" href="index.css">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="input.css">
+<link rel="stylesheet" href="customer.css">
+<link rel="stylesheet" href="profil.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="app">
+  
+  <!-- ===== VIEW HOME ===== -->
+  <div class="view active" id="view-home">
+    <div class="view-inner">
+      <div class="page-content">
+        <!-- HEADER -->
+        <div class="headerHome"></div>
+  
+        <!-- CARD MARKETING -->
+        <div id="marketingList">
+          <div class="marketing-card">
+            <!-- Avatar bisa berisi foto atau inisial -->
+            <div class="avatar"></div>
+          
+            <div class="marketing-info">
+              <div class="nama">Loading</div>
+              <div class="motivasi">Memuat motivasi Anda</div>
+              <div class="kantor">Kantor Cabang</div>
+            </div>
+          
+            <div class="tanggal-waktu">
+              <div class="tanggal">Senin, 1 Januari 2026</div>
+              <div class="waktu">18:00</div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- TOMBOL INPUT -->
+        <div class="btn-container">
+          <button id="btnInputMarketing" class="btn-input-marketing">
+            <svg class="input-icon" viewBox="0 0 24 24">
+              <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h14V5H5zm2 2h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z"/>
+            </svg>
+            Input
+          </button>
+        </div>
+  
+        <!-- NOTE CARD -->
+        <div class="note-card" id="noteCard">
+          <div class="note-header">
+            <div class="note-title">Informasi</div>
+            <div class="note-date" id="noteDate"></div>
+          </div>
+          <div class="note-text">Tidak ada informasi hari ini</div>
+        </div>
+  
+        <!-- CUSTOMER NOTE CARD -->
+        <div class="customer-note-card">
+          <div class="customer-note-header">
+            <div class="customer-note-title">Catatan Customer</div>
+            <svg id="btnFilterHari" class="filter-hari-icon" viewBox="0 0 24 24">
+              <path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/>
+            </svg>
+          </div>
+  
+          <div class="customer-note-list" id="customerNoteList"></div>
+  
+          <div id="popupFilterHari" class="popup-filter-hari">
+            <div data-hari="Senin">Senin</div>
+            <div data-hari="Selasa">Selasa</div>
+            <div data-hari="Rabu">Rabu</div>
+            <div data-hari="Kamis">Kamis</div>
+            <div data-hari="Jumat">Jumat</div>
+            <div data-hari="Sabtu">Sabtu</div>
+            <div data-hari="Minggu">Minggu</div>
+            <div data-hari="semua">Semua Hari</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ===== VIEW INPUT ===== -->
+  <div class="view" id="view-input">
+    
+      <div class="page-content">
+        <!-- ===== HEADER HARI ===== -->
+        <div id="headerHari">
+          <svg id="btnBackHome" class="header-btn" viewBox="0 0 24 24">
+            <path d="M15 18l-6-6 6-6" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="header-center">
+            <span id="headerHariText">Hari ini</span>
+            <div id="stokRealtime" class="stok-realtime">
+              <span class="cb">CB 0</span>
+              <span class="bb">BB 0</span>
+              <span class="bk">BK 0</span>
+            </div>
+          </div>
+          <label class="filter-analisa">
+            <input type="checkbox" id="radioAnalisa">
+            <span></span>
+          </label>
+          <svg id="btnBawaBarang" class="header-btn-right" viewBox="0 0 24 24">
+          <path fillRule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375ZM6 12a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V12Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 15a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V15Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 18a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V18Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+          </svg>
+        </div>
+  
+        <!-- ===== SEARCH + PROGRESS CARD ===== -->
+        <div id="searchProgressCard" class="search-progress-card">
+          <input type="text" id="searchCustomer" placeholder="Cari customer..." />
+  
+          <div class="progress-trayek">
+            <div id="progressHari" style="font-weight:bold; margin-bottom:4px;"></div>
+            <div id="progressText" style="font-size:0.9rem; margin-bottom:6px;">
+              Progress 0 / 0 toko
+            </div>
+            <div class="progress-bar" style="background:#eee; height:12px; border-radius:6px; overflow:hidden;">
+              <div id="progressFill" style="background:#2d8cff; height:100%; width:0%; transition:width 0.3s;"></div>
+            </div>
+          
+            <!-- container baru untuk keterangan jumlah per status -->
+            <div id="progressStatus" style="margin-top:6px; font-size:0.85rem; display:flex; gap:12px;">
+              <span class="status-item tutup">Tutup (0)</span>
+              <span class="status-item pending">Pending (0)</span>
+              <span class="status-item putus">Putus (0)</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- LIST CUSTOMER -->
+        <div id="listCustomerInput"></div>
+  
+      </div>
+    
+  </div>
+  
+  <!-- ===== VIEW CUSTOMER ===== -->
+  <div class="view" id="view-customer">
+    
+      <div class="page-content">
+        <!-- HEADER CUSTOMER -->
+        <div id="headerCustomer">
+          <div class="header-dropdown">
+            <button id="btnHari" title="Pilih Hari">
+              Daftar Customer
+            </button>
+          </div>
+        </div>
+        <ul id="dropdownHari" class="dropdown-list">
+          <li data-hari="Senin">Senin</li>
+          <li data-hari="Selasa">Selasa</li>
+          <li data-hari="Rabu">Rabu</li>
+          <li data-hari="Kamis">Kamis</li>
+          <li data-hari="Jumat">Jumat</li>
+          <li data-hari="Sabtu">Sabtu</li>
+          <li data-hari="Semua">Semua Hari</li>
+        </ul>  
+        <!-- INFO CARD -->
+        <div id="infoCard" class="info-card">
+          <div class="info-row">
+            <div class="info-texts">
+              <div id="infoHari">Hari: Senin</div>
+              <div id="infoJumlah">Jumlah Customer: 3</div>
+            </div>
+            <button class="icon-btn icon-btn-add">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+            </button>
+          </div>
+        
+          <input type="text" id="searchNameCustomer" placeholder="Cari customer..." />
+          <div id="customerList" class="scrollable-list">Loading...</div>
+        </div>
+      </div>
+    
+  </div>
+
+<!-- ===== VIEW PROFIL ===== -->
+<div class="view" id="view-profil">
+  <div class="page-content">
+    <!-- HEADER PROFIL FOTO -->
+    <div class="profil-header" id="profilHeader"></div>
+
+    <div class="profil-card" id="profilCard">
+      <div class="profil-nama" id="profilNama">Loading...</div>
+      <div class="profil-email" id="profilEmail">-</div>
+      <div class="profil-detail">
+        <span class="profil-role">
+          <svg class="icon-role" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span id="profilRole">-</span>
+        </span>
+        <span class="profil-kantor">
+          <svg class="icon-kantor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/></svg>
+          <span id="profilKantor">-</span>
+        </span>
+      </div>
+    
+      <!-- Tombol ganti foto -->
+      <button id="btnGantiFoto" class="btn-ganti-foto" title="Ganti Foto">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6" width="20" height="20">
+          <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
+          <path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+<!-- ===== CARD MENU PROFIL ===== -->
+<div class="profil-menu-card">
+
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M5 3h14a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2z"/>
+      </svg>
+      <span class="menu-title">Persyaratan</span>
+    </div>
+
+    <div class="menu-arrow">›</div>
+  </div>
+
+
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9 12l2 2 4-4"/>
+        <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/>
+      </svg>
+      <span class="menu-title">Persetujuan</span>
+    </div>
+
+    <div class="menu-arrow">›</div>
+  </div>
+
+
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <span class="menu-title">Pengajuan</span>
+    </div>
+
+    <div class="menu-arrow">›</div>
+  </div>
+  
+  <div class="menu-item" id="btnLogout">
+    <div class="menu-left">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M16 17l5-5-5-5v3H9v4h7v3z"/>
+        <path d="M4 4h7v2H6v12h5v2H4z"/>
+      </svg>
+      <span class="menu-title">Logout</span>
+    </div>
+  
+    <div class="menu-arrow">›</div>
+  </div>
+</div>
+<div class="popup-logout" id="popupLogout">
+
+  <div class="popup-box">
+    <h3>Logout dari akun?</h3>
+    <p>Anda akan keluar dari aplikasi.</p>
+
+    <div class="popup-actions">
+      <button class="btn-cancel" id="cancelLogout">Batal</button>
+      <button class="btn-ok" id="confirmLogout">Oke</button>
+    </div>
+  </div>
+
+</div>
+  </div>
+</div>
+
+</div>
+<!-- ===== NAVBAR BOTTOM ===== -->
+<div class="navbar-bottom">
+  <div class="nav-active-circle" id="navCircle"></div>
+
+  <div class="nav-item" data-index="0" data-view="home">
+    <svg viewBox="0 0 24 24"><path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z"/><path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z"/></svg>
+    <span>Home</span>
+  </div>
+
+  <div class="nav-item" data-index="1" data-view="customer">
+    <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 12c-4 0-7 2-7 5v3h14v-3c0-3-3-5-7-5z"/></svg>
+    <span>Customer</span>
+  </div>
+
+  <div class="nav-item" data-index="2" data-view="chatlist">
+    <svg viewBox="0 0 24 24"><path d="M4 4h16v12H5.17L4 17.17V4z"/></svg>
+    <span>Chat</span>
+  </div>
+
+  <div class="nav-item" data-index="3" data-view="profil">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    <span>Profil</span>
+  </div>
+</div>
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="home.js"></script>
+<script src="input.js"></script>
+<script src="customer.js"></script>
+<script src="profil.js"></script>
+<script src="index.js"></script>
+
+</body>
+</html>

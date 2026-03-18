@@ -1,0 +1,864 @@
+/* ===== HEADER ===== */
+#headerHari {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  font-weight:700;
+  color:#ffffff;
+  padding:12px 16px;
+  margin-bottom:10px;
+  border-radius:0 0 16px 16px;
+  background:#b3874f;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  z-index:5;
+}
+/* ===== CENTER AREA ===== */
+.header-center{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+/* teks hari */
+#headerHariText{
+  text-align:center;
+}
+/* ===== BUTTON LEFT ===== */
+#btnBackHome{
+  position:absolute;
+  left:16px;
+  top:50%;
+  transform:translateY(-50%);
+  width:28px;
+  height:28px;
+  cursor:pointer;
+  fill:none;
+  stroke:#ffffff;
+  stroke-width:2;
+}
+/* ===== BUTTON RIGHT ===== */
+#btnBawaBarang{
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  width:26px;
+  height:26px;
+  cursor:pointer;
+  fill:#ffffff;
+}
+/* ===== FILTER ANALISA ===== */
+.filter-analisa{
+  position:absolute;
+  right:52px;   /* jarak dari icon barang */
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+}
+.filter-analisa input{
+  display:none;
+}
+.filter-analisa span{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,0.6);
+  display:inline-block;
+  position:relative;
+  cursor:pointer;
+  transition:all .2s;
+}
+/* hover effect */
+.filter-analisa span:hover{
+  border-color:#ffffff;
+}
+/* checked state */
+.filter-analisa input:checked + span{
+  border-color:#ffffff;
+}
+.filter-analisa input:checked + span::after{
+  content:"";
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#ffffff;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+.filter-analisa input:checked + span{
+  border-color:#ffffff;
+  transform:scale(1.1);
+}
+/* ===== STOK REAL-TIME ===== */
+.stok-realtime {
+  display: flex;
+  gap: 6px;
+  justify-content: center;  /* center horizontal */
+}
+.stok-realtime span {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-radius: 20px;
+  color: #b3874f;
+}
+.stok-realtime .cb { background: #ffe5b4; }
+.stok-realtime .bb { background: #ffe5b4; }
+.stok-realtime .bk { background: #ffe5b4; }
+/* ===== CSS UNTUK TEKS PARAGRAF BAWA BARANG ===== */
+.customer-input-popup .info-text {
+  margin-top: 5px;         
+  padding: 3px 12px;        
+  border-radius: 6px;       
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #b3874f;              
+  line-height: 1.4;         
+  font-style: italic;        /* <-- ini bikin miring */
+}
+
+/*===== LIST CUSTOMER ===== */
+.customer-item{
+  position:relative;
+  display:flex;
+  align-items:center;
+  padding: 5px 16px;
+  margin: 4px 20px;
+  border-radius: 40px;
+  background: #ffe5b4;
+  border-bottom:1px solid #eee;
+}
+/* FLAG CATATAN (juga tombol catatan) */
+.flag-catatan.btn-catatan{
+  position:absolute;
+  left:-10px;
+  top:50%;
+  transform:translateY(-50%) scale(0);
+  width:20px;
+  height:14px;
+  background:#f59e0b;
+  border-radius:2px;
+  box-shadow:0 2px 4px rgba(0,0,0,0.25);
+  cursor:pointer;
+  animation:flagPop 0.35s ease forwards;
+  z-index:2;
+}
+
+/* ujung pita */
+.flag-catatan.btn-catatan::after{
+  content:"";
+  position:absolute;
+  right:-6px;
+  top:0;
+  border-top:7px solid transparent;
+  border-bottom:7px solid transparent;
+  border-left:6px solid #f59e0b;
+}
+.flag-catatan.btn-catatan:hover{
+  transform:translateY(-50%) scale(1.1);
+}
+/* animasi muncul */
+@keyframes flagPop{
+  0%{
+    transform:translateY(-50%) scale(0);
+    opacity:0;
+  }
+  70%{
+    transform:translateY(-50%) scale(1.15);
+  }
+  100%{
+    transform:translateY(-50%) scale(1);
+    opacity:1;
+  }
+}
+
+/* ===== BADGE ANALISA BULAT ===== */
+.badge-analisa{
+  position:absolute;
+  right:6px;
+  top:6px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:9px;
+  color:#fff;
+  box-shadow:0 2px 4px rgba(0,0,0,0.25);
+  transform:scale(0);
+  animation:badgePop 0.3s ease forwards;
+  z-index:3;
+}
+/* warna level */
+.badge-analisa.kecil{
+  background:#facc15;
+}
+.badge-analisa.sedang{
+  background:#fb923c;
+}
+.badge-analisa.besar{
+  background:#ef4444;
+}
+/* animasi muncul */
+@keyframes badgePop{
+  0%{
+    transform:scale(0);
+    opacity:0;
+  }
+  70%{
+    transform:scale(1.2);
+  }
+  100%{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+/* Foto atau inisial */
+.customer-photo,
+.customer-photo-initials {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 15px;
+  object-fit: cover;
+}
+.customer-photo {
+  background: #ddd;
+  border: 1px solid #b3874f;
+  color: inherit;
+}
+.customer-photo-initials {
+  background-color: #ccc;
+  color: #fff;
+  border: 1px solid #b3874f;
+  text-transform: uppercase;
+}
+/* Badge NEW di pojok atas foto */
+.customer-item {
+  position: relative; /* supaya badge bisa posisi absolut di dalam item */
+}
+
+.badge-new {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background-color: #e53935; /* merah cerah */
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 10;
+  pointer-events: none; /* supaya klik tetap ke foto */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Optional: sedikit animasi muncul */
+.badge-new {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+.image-preview-overlay {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.7);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+.image-preview-box {
+  background:#fff;
+  padding:14px;
+  border-radius:12px;
+  text-align:center;
+  width:90%;
+  max-width:520px;
+}
+
+/* FOTO LANDSCAPE 4:2 */
+.image-preview-box img{
+  width:100%;
+  aspect-ratio: 4 / 2;
+  object-fit: cover;
+  border-radius:8px;
+}
+
+/* TOMBOL LEBIH PANJANG */
+.image-preview-box button{
+  margin-top:14px;
+  padding:10px 28px;
+  border:none;
+  background:#b3874f;
+  color:#fff;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:500;
+  min-width:120px;
+}
+/* Info customer */
+.customer-info{
+  flex:1;
+}
+
+/* Nama + badge row */
+.customer-name-row{
+  display: flex;
+  align-items: center;
+  gap: 4px; /* rapatkan nama & badge */
+}
+.customer-name-row .customer-name{
+  font-size: 16px;
+  font-weight: 600;
+}
+.customer-name-row .badge-status{
+  margin-top: 0;
+  font-size: 12px;
+  padding: 2px 6px; /* lebih rapat ke nama */
+  border-radius: 20px;
+  display:inline-block;
+  color:white;
+}
+
+/* Stok */
+.customer-stock{
+  display:flex;
+  gap:6px;
+  margin-top:3px;
+  flex-wrap:wrap;
+}
+
+/* Jarak */
+.customer-distance{
+  font-size:11px;
+  color:#9ca3af;
+  font-style:italic;
+  margin-top:2px;
+  letter-spacing:0.2px;
+}
+
+/* ===== ACTION CONTAINER ===== */
+.customer-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+/* ===== CATATAN BUTTON ===== */
+.btn-catatan{
+  width:32px;
+  height:32px;
+  background:#b3874f;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  flex-shrink:0;
+  cursor:pointer;
+  transition:transform 0.2s;
+}
+.btn-catatan svg{
+  width:16px;
+  height:16px;
+  fill:#ffffff;
+}
+.btn-catatan:hover{
+  transform:scale(1.1);
+}
+
+/* ===== LOKASI BUTTON ===== */
+.btn-lokasi{
+  width:32px;
+  height:32px;
+  background:#b3874f;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  flex-shrink:0;
+  cursor:pointer;
+  transition:transform 0.2s;
+}
+
+.btn-lokasi svg{
+  width:18px;
+  height:18px;
+  fill:#fff;
+}
+
+.btn-lokasi:hover{
+  transform:scale(1.1);
+}
+
+/* Item visited */
+.customer-item.visited{
+  background:#e8f8ee;
+  border-left:5px solid #22c55e;
+}
+
+/* Badge status */
+.badge-status.tutup{ background:#6b7280; }
+.badge-status.pending{ background:#f59e0b; }
+.badge-status.putus{ background:#ef4444; }
+
+/*===== POPUP EDIT CATATAN =====*/
+.catatan-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+.catatan-box{
+  background:white;
+  width:90%;
+  max-width:400px;
+  padding:20px;
+  border-radius:12px;
+}
+
+.catatan-box h1{
+  font-size:18px;
+  margin-bottom:12px;
+}
+
+.catatan-box textarea{
+  width:100%;
+  min-height:90px;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  resize:none;
+}
+
+.catatan-box button{
+  margin-top:14px;
+  width:100%;
+  padding:10px;
+  border:none;
+  background:#b3874f;
+  color:white;
+  border-radius:8px;
+}
+/* ===== POPUP BACKGROUND ===== */
+.customer-input-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 15px;
+  box-sizing: border-box;
+}
+/* ===== POPUP CARD ===== */
+.customer-input-popup > div {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  padding: 20px;
+  margin-top: -100px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: popupFade 0.3s ease-out;
+  /* tambahan supaya tidak overflow */
+  max-height: 90vh; 
+  overflow-y: auto;
+}
+/* ===== ANIMASI POPUP ===== */
+@keyframes popupFade {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* ======= POPUP ADVANCED (DISABLE & FEE) ====== */
+/* label kategori advanced */
+.input-group.disable label{
+  background:#ffe5b4;
+  color:#8a4b00;
+}
+.input-group.disable input{
+  border-color:#ffd699;
+}
+.input-group.fee label{
+  background:#e6f4ff;
+  color:#0b5394;
+}
+.input-group.fee input{
+  border-color:#b6daff;
+}
+/* animasi fokus input biar lebih hidup */
+.input-group.disable input:focus{
+  box-shadow:0 0 6px rgba(255,165,0,0.35);
+}
+.input-group.fee input:focus{
+  box-shadow:0 0 6px rgba(0,123,255,0.35);
+}
+/* tombol simpan */
+.customer-input-popup button{
+  margin-top:10px;
+  padding:10px;
+  border:none;
+  border-radius:20px;
+  background:#b3874f;
+  color:#fff;
+  font-size:0.95rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+.customer-input-popup button:hover{
+  transform:scale(1.03);
+}
+.customer-input-popup button:active{
+  transform:scale(0.98);
+}
+/* loading state */
+.customer-input-popup button[data-loading="true"]{
+  opacity:0.7;
+  cursor:not-allowed;
+}
+
+/* ===== POPUP INPUT CUSTOMER NAME ===== */
+.customer-input-popup h1 {
+  text-align: center;
+  font-size: 1rem;
+  margin: 0;
+  color: #b3874f;
+}
+/* ===== LAST DATA ===== */
+.customer-input-popup .last-data {
+  text-align:center;
+  font-size:0.9rem;
+  color:#333;
+  background-color:#f0f0f0;
+  padding:15px 15px;
+  border-radius:20px;
+  margin-bottom:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+/* chip stok */
+.last-data .customer-stock{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+/* chip style */
+.stock-chip{
+  font-size:11px;
+  padding:5px 10px;
+  border-radius:8px;
+  font-weight:600;
+}
+
+/* warna kategori */
+.stock-cb{
+  background:#e0f2fe;
+  color:#0369a1;
+}
+
+.stock-bb{
+  background:#fef3c7;
+  color:#92400e;
+}
+
+.stock-bk{
+  background:#e5e7eb;
+  color:#374151;
+}
+/* ===== CREATED AT ===== */
+.customer-input-popup .created-at {
+  color: #856404;       /* warna cokelat gelap */
+  font-size: 0.75rem;   /* font lebih kecil */
+  font-style: italic;    /* miring */
+  margin-top: 4px;       /* jarak dari CB BB BK */
+  text-align: center;    /* tetap di tengah */
+}
+/* ===== JUMLAH PEMBAYARAN ===== */
+.jumlah-pembayaran {
+  background: #fff3cd;
+  border-radius: 20px;
+  padding: 10px;
+  margin-top: -15px;
+  text-align: center;
+}
+.jumlah-pembayaran label {
+  display: block;
+  font-size: 0.75rem; /* label kecil */
+  margin-bottom: 2px; /* rapat ke input */
+  font-weight: bold;
+}
+.jumlah-pembayaran input {
+  font-size: 1.3rem; /* input besar */
+  font-weight: bold;
+  color: #198754; /* hijau */
+  text-align: center;
+  border: none;
+  background: transparent;
+  width: 100%;
+  outline: none;
+  padding: 2px 0; /* rapat */
+}
+/* ===== INPUT GROUP ===== */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.input-group label {
+  font-weight: bold;
+  padding: 4px 8px 24px 8px; /* atas 4px, bawah 24px */
+  border-radius: 15px;
+  text-transform: capitalize;
+  font-size: 0.9rem;
+  line-height: 1.2; /* rapatkan teks vertikal */
+}
+/* ===== WARNA KATEGORI LABEL & BORDER INPUT ===== */
+.input-group.return label { background: #fff3cd; color: #856404; }
+.input-group.return input { border-color: #ffeeba; }
+.input-group.expired label { background: #f8d7da; color: #721c24; }
+.input-group.expired input { border-color: #f5c6cb; }
+.input-group.konsinyasi label { background: #d4edda; color: #155724; }
+.input-group.konsinyasi input { border-color: #c3e6cb; }
+.input-group.cash label { background: #d1ecf1; color: #0c5460; }
+.input-group.cash input { border-color: #bee5eb; }
+.input-group.tunggakan label { background: #e2e3ff; color: #383dff; }
+.input-group.tunggakan input { border-color: #c5c6ff; }
+/* ===== FLEX UNTUK INPUT ROW CB BB BK ===== */
+.input-row {
+  display: flex;
+  gap: 5px;
+  margin-top: -25px;
+}
+.input-row input {
+  flex: 1;
+  min-width: 0; /* penting supaya input tidak overflow */
+  padding: 8px 10px;
+  border-radius: 15px;
+  border: 2px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+}
+.input-row input:focus {
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+/* ===== TOMBOL FOTO ===== */
+.btn-foto-container{
+  margin-top:10px;
+}
+.btn-foto{
+  width:100%;
+  aspect-ratio:19/6;
+  border:2px dashed #bbb;
+  border-radius:12px;
+  background:#fafafa;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  cursor:pointer;
+  transition:0.2s;
+}
+.btn-foto:hover{
+  background:#f0f0f0;
+}
+.btn-foto svg{
+  width:28px;
+  height:28px;
+  fill:#555;
+}
+.btn-foto span{
+  font-size:0.8rem;
+  color:#555;
+}
+.foto-preview{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:16px;
+}
+/* ===== STATUS TOKO ===== */
+.status-tunggakan{
+  display:flex;
+  justify-content:center;   /* CENTER horizontal */
+  align-items:center;
+  gap:14px;
+  margin-top:12px;
+  font-size:0.85rem;
+  width:100%;
+}
+.status-item{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:4px 10px;
+  border-radius:8px;
+  cursor:pointer;
+}
+/* WARNA STATUS */
+.status-item.tutup{
+  background:#fff3cd;
+  color:#856404;
+}
+.status-item.pending{
+  background:#ffe5b4;
+  color:#8a4b08;
+}
+.status-item.putus{
+  background:#f8d7da;
+  color:#721c24;
+}
+.status-item input{
+  accent-color:#333;
+}
+
+/* ================= BTN KIRIM ================= */
+#btnKirim{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:20px;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .25s ease;
+  background:#2d8cff;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+/* hover */
+#btnKirim:hover{
+  background:#1f6fe0;
+}
+/* loading */
+#btnKirim.loading{
+  background:#9aa4b2;
+  cursor:not-allowed;
+}
+/* success */
+#btnKirim.success{
+  background:#22c55e;
+}
+/* gagal */
+#btnKirim.error{
+  background:#ef4444;
+}
+/* spinner loading */
+#btnKirim.loading::after{
+  content:"";
+  width:16px;
+  height:16px;
+  border:2px solid white;
+  border-top:2px solid transparent;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+/* animasi spinner */
+@keyframes spin{
+  from{
+    transform:rotate(0deg);
+  }
+  to{
+    transform:rotate(360deg);
+  }
+}
+/* FIXED PROGRESS CARD */
+.search-progress-card {
+  position: fixed;      /* tetap di bawah */
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #b3874f;
+  padding: 10px 20px 20px 20px;
+  box-shadow: 0 -4px 8px rgba(0,0,0,0.1);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #ffffff;
+  border-radius: 20px 20px 0 0;
+}
+
+/* SCROLLABLE CUSTOMER LIST */
+#listCustomerInput {
+  overflow-y: auto;
+  padding-bottom: 160px; /* supaya tidak tertutup card */
+  height: calc(100vh - 70px - 140px); /* contoh: 70px header + 140px card */
+}
+#searchCustomer:focus {
+  border-color: #2d8cff;
+  box-shadow: 0 0 6px rgba(45,140,255,0.5);
+  outline: none;
+}
+/* SEARCH INPUT */
+#searchCustomer {
+  width: 100%;
+  padding: 10px 16px;
+  margin-bottom: -10px;
+  border-radius: 30px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+/* PROGRESS BAR */
+.progress-bar {
+  background: #eee;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+#progressFill {
+  background: #2d8cff;
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s;
+}
+/* ===== RESPONSIVE ===== */
+@media screen and (max-width: 480px) {
+  .customer-input-popup > div { padding: 15px; }
+  .customer-input-popup h1 { font-size: 1.5rem; }
+  .input-row input { padding: 6px 8px; font-size: 0.95rem; }
+  .input-group label { font-size: 0.85rem; }
+}

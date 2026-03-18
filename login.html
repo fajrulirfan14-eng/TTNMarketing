@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f8e9d2">
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="ikon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="ikon-48.png">
+<link rel="icon" type="image/png" sizes="512x512" href="ikon-512.png">
+<!-- Apple Touch Icon -->
+<link rel="apple-touch-icon" sizes="192x192" href="ikon-192.png">
+<title>Login Marketing | Teh Tarik Nusantara</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* RESET */
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+html,body{
+  width:100%;
+  height:100%;
+  font-family:'Poppins',sans-serif;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#F7F3EE;
+  position:relative;
+  color:#6b584b;
+  overflow-x:hidden;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ANIMASI SAAT HALAMAN DIBUKA */
+.login-box{
+  opacity:0;
+  transform:translateY(30px);
+  animation:fadeLogin 0.8s ease forwards;
+}
+@keyframes fadeLogin{
+  0%{
+    opacity:0;
+    transform:translateY(30px);
+  }
+  100%{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* STAGGER FORM ANIMATION */
+.fade-item{
+  opacity:0;
+  transform:translateY(20px);
+  animation:fadeItem 0.6s ease forwards;
+}
+@keyframes fadeItem{
+  0%{
+    opacity:0;
+    transform:translateY(20px);
+  }
+  100%{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* FADE DELAY */
+.logo-wrapper{
+  animation-delay:0.2s;
+}
+.email-field{
+  animation-delay:0.4s;
+}
+.password-field{
+  animation-delay:0.6s;
+}
+.login-button{
+  animation-delay:0.8s;
+}
+.footer{
+  animation-delay:1s;
+}
+
+/* BACKGROUND LOGO FLOAT */
+.bg-logo{
+  position:absolute;
+  opacity:0.1;
+  pointer-events:none;
+  z-index:0;
+  animation:float linear infinite;
+}
+@keyframes float{
+  0%{
+    transform:translateY(110vh) translateX(0);
+  }
+  100%{
+    transform:translateY(-100px) translateX(40px);
+  }
+}
+
+/* LOGIN CARD */
+.login-box{
+  position:relative;
+  z-index:1;
+  background:rgba(255,255,255,0.92);
+  padding:40px 30px;
+  border-radius:18px;
+  text-align:center;
+  width:90%;
+  max-width:360px;
+  box-shadow:0 15px 40px rgba(0,0,0,0.12);
+}
+
+/* LOGO + GOLD GLOW */
+.logo-spin{
+  animation:spinLogo 0.6s linear;
+}
+@keyframes spinLogo{
+  0%{
+    transform:rotate(0deg);
+  }
+  100%{
+    transform:rotate(360deg);
+  }
+}
+.logo-wrapper{
+  position:relative;
+  display:flex;
+  justify-content:center;
+  margin-bottom:25px;
+}
+.logo-wrapper::before{
+  content:"";
+  position:absolute;
+  width:180px;
+  height:180px;
+  background:radial-gradient(circle,#C8A97E55,#C8A97E00);
+  border-radius:50%;
+  filter:blur(25px);
+  z-index:-1;
+}
+.logo-wrapper img{
+  width:170px;
+  transition:transform 0.6s ease;
+}
+.logo-wrapper img:hover{
+  transform:rotate(360deg);
+}
+
+/* INPUT FIELD */
+.input-group{
+  position:relative;
+  margin:12px 0;
+}
+.input-group i{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#C8A97E;
+  font-size:15px;
+}
+.input-group input{
+  width:100%;
+  padding:12px 12px 12px 38px;
+  border:none;
+  border-radius:10px;
+  outline:none;
+  background:rgba(200,169,126,0.12);
+  color:#6b584b;
+  font-size:14px;
+  transition:0.25s;
+}
+.input-group input:focus{
+  background:rgba(200,169,126,0.22);
+  box-shadow:0 0 0 2px rgba(200,169,126,0.25);
+}
+
+/* PREMIUM BUTTON */
+button{
+  width:100%;
+  padding:13px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#D4B185,#B08A5C);
+  color:#fff;
+  font-weight:600;
+  font-size:15px;
+  cursor:pointer;
+  transition:0.15s ease;
+  box-shadow:0 8px 20px rgba(176,138,92,0.35);
+}
+button:active{
+  transform:scale(0.96);
+  box-shadow:0 4px 10px rgba(176,138,92,0.3);
+}
+
+/* ERROR */
+.error{
+  color:#ff5c5c;
+  margin-top:10px;
+  font-size:14px;
+}
+
+/* FOOTER */
+.footer{
+  margin-top:16px;
+  font-size:12px;
+  color:#8B7D74;
+}
+
+/* MOBILE */
+@media(max-width:480px){
+  .login-box{
+    padding:30px 22px;
+  }
+  .logo-wrapper img{
+    width:140px;
+  }
+}
+
+</style>
+</head>
+<body>
+<script>
+/* BACKGROUND LOGO FLOAT SMOOTH */
+const logoCount = 20;
+for(let i = 0; i < logoCount; i++){
+  const logo = document.createElement('img');
+  logo.src = 'LogoTTN.png';
+  logo.className = 'bg-logo';
+  logo.style.left = Math.random()*100 + 'vw';
+  logo.style.top = Math.random()*100 + 'vh';
+  let size = 30 + Math.random()*40;
+  logo.style.width = size + 'px';
+  logo.style.height = size + 'px';
+  logo.style.animationDuration = (18 + Math.random()*20) + 's';
+  document.body.appendChild(logo);
+}
+</script>
+<div class="login-box">
+  <div class="logo-wrapper fade-item">
+    <img src="LogoTTN.png" alt="Logo TTN" id="logoTTN">
+  </div>
+  <div class="input-group fade-item email-field">
+    <i class="fa-solid fa-user"></i>
+    <input type="email" id="username" placeholder="Email">
+  </div>
+  <div class="input-group fade-item password-field">
+    <i class="fa-solid fa-lock"></i>
+    <input type="password" id="password" placeholder="Password">
+  </div>
+  <button id="loginBtn" class="fade-item login-button" onclick="login()">
+    <span id="btnText">Masuk</span>
+    <i id="btnLoader" class="fa fa-spinner fa-spin" style="display:none"></i>
+  </button>
+  <p class="error" id="error-msg"></p>
+  <div class="footer fade-item">© 2026 Teh Tarik Nusantara</div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { 
+  getAuth, 
+  signInWithEmailAndPassword 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyD8thbh1A0KKkvQ5DrdolBFI5KisPWfXKk",
+  authDomain: "marketing-4141c.firebaseapp.com",
+  projectId: "marketing-4141c",
+  storageBucket: "marketing-4141c.firebasestorage.app",
+  messagingSenderId: "386014931979",
+  appId: "1:386014931979:web:631f056535caa664b5eb0e",
+  measurementId: "G-BPENXW6HNL"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const logo = document.getElementById("logoTTN");
+logo.addEventListener("click", ()=>{
+  logo.classList.remove("logo-spin");
+  /* reset animasi supaya bisa diputar lagi */
+  void logo.offsetWidth;
+  logo.classList.add("logo-spin");
+});
+window.login = function(){
+  const email = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  const btn = document.getElementById("loginBtn");
+  const text = document.getElementById("btnText");
+  const loader = document.getElementById("btnLoader");
+  /* tampilkan loading */
+  text.style.display = "none";
+  loader.style.display = "inline-block";
+  btn.disabled = true;
+  signInWithEmailAndPassword(auth,email,password)
+  .then((userCredential)=>{
+    const user = userCredential.user;
+    console.log("Login berhasil:",user);
+    window.location.href = "index.html";
+  })
+  .catch((error)=>{
+    document.getElementById("error-msg").innerText = "Email atau password salah";
+    /* kembalikan tombol */
+    text.style.display = "inline";
+    loader.style.display = "none";
+    btn.disabled = false;
+    console.error(error);
+  });
+}
+</script>
+</body>
+</html>

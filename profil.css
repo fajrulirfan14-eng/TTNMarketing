@@ -1,0 +1,260 @@
+.profil-header {
+  width: 100%;
+  height: 180px; /* tinggi header */
+  background: #b3874f; /* fallback warna */
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border: 2px solid #b3874f;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end; /* kalau mau teks / konten di bawah header */
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  transition: background-image 0.3s ease;
+}
+
+/*===== PROFIL CARD =====*/
+.profil-card {
+  background: #fff;
+  margin: 16px;
+  margin-top: -50px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profil-nama {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4b3f36;
+}
+
+.profil-email {
+  font-size: 14px;
+  color: #7b6d5e;
+}
+
+.profil-detail {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #555;
+  font-style: italic;
+  align-items: center;
+}
+
+.profil-detail svg {
+  width: 16px;
+  height: 16px;
+  fill: #b3874f;
+  margin-right: 4px;
+}
+
+/*===== BTN GANTI FOTO =====*/
+/* Tombol ganti foto di kanan tengah card */
+.btn-ganti-foto {
+  position: absolute;
+  top: 12px;               /* jarak dari atas header */
+  right: 12px;             /* jarak dari kanan header */
+  width: 36px;             /* tombol lebih kecil */
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #b3874f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  padding: 0;              /* hapus padding internal */
+  transition: all 0.2s ease;
+}
+
+/* efek hover */
+.btn-ganti-foto:hover {
+  background: #f3e5d3;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* SVG langsung mengisi tombol */
+.btn-ganti-foto svg.size-6 {
+  width: 22px;   /* lebih besar, rapat ke tepi */
+  height: 22px;
+  fill: #b3874f;
+  margin: 0;     /* hapus margin */
+}
+
+/* Popup konfirmasi custom */
+.popup-ganti-foto {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  width: 280px;
+  text-align: center;
+}
+
+.popup-ganti-foto.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.popup-ganti-foto p {
+  font-size: 14px;
+  color: #555;
+  font-style: italic;
+  margin: 8px 0 16px;
+}
+
+.popup-ganti-foto button {
+  margin: 0 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.popup-ganti-foto .btn-ok {
+  background: #b3874f;
+  color: #fff;
+}
+
+.popup-ganti-foto .btn-cancel {
+  background: #eee;
+  color: #555;
+}
+
+/* ===== CARD MENU PROFIL ===== */
+.profil-menu-card{
+  background:#fff;
+  margin:16px;
+  border-radius:20px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  overflow:hidden;
+}
+
+/* tiap menu */
+.menu-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 18px;
+  border-bottom:1px solid #eee;
+  cursor:pointer;
+  transition:background 0.2s;
+}
+
+.menu-item:last-child{
+  border-bottom:none;
+}
+
+.menu-item:hover{
+  background:#f8f6f2;
+}
+
+/* kiri (icon + text) */
+.menu-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* svg */
+.menu-left svg{
+  width:20px;
+  height:20px;
+  fill:#b3874f;
+}
+
+/* text */
+.menu-title{
+  font-size:14px;
+  font-weight:600;
+  color:#4b3f36;
+}
+
+/* panah kanan */
+.menu-arrow{
+  font-size:18px;
+  color:#999;
+}
+
+/* overlay */
+.popup-logout{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  opacity:0;
+  pointer-events:none;
+  transition:0.25s;
+}
+
+.popup-logout.show{
+  opacity:1;
+  pointer-events:auto;
+}
+
+/* box */
+.popup-box{
+  background:#fff;
+  padding:20px;
+  border-radius:14px;
+  width:260px;
+  text-align:center;
+  box-shadow:0 6px 20px rgba(0,0,0,0.2);
+}
+
+.popup-box h3{
+  font-size:16px;
+  margin-bottom:6px;
+}
+
+.popup-box p{
+  font-size:13px;
+  color:#666;
+  margin-bottom:16px;
+}
+
+/* tombol */
+.popup-actions{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.btn-cancel{
+  background:#eee;
+  border:none;
+  padding:7px 14px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.btn-ok{
+  background:#b3874f;
+  color:#fff;
+  border:none;
+  padding:7px 14px;
+  border-radius:8px;
+  cursor:pointer;
+}
