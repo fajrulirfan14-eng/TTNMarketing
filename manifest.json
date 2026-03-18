@@ -2,7 +2,7 @@
   "name": "TTN Marketing",
   "short_name": "TehTarik Marketing",
   "description": "Aplikasi manajemen pendataan duvisi marketing.",
-  "start_url": "/index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f8e9d2",
   "theme_color": "#b3874f",
