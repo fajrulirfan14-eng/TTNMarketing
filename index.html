@@ -17,6 +17,7 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 <link rel="stylesheet" href="home.css">
 <link rel="stylesheet" href="input.css">
 <link rel="stylesheet" href="customer.css">
+<link rel="stylesheet" href="analisis.css">
 <link rel="stylesheet" href="profil.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -194,100 +195,117 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
     
   </div>
 
-<!-- ===== VIEW PROFIL ===== -->
-<div class="view" id="view-profil">
+<!-- ===== VIEW ANALISIS ===== -->
+<div class="view" id="view-analisis">
   <div class="page-content">
-    <!-- HEADER PROFIL FOTO -->
-    <div class="profil-header" id="profilHeader"></div>
 
-    <div class="profil-card" id="profilCard">
-      <div class="profil-nama" id="profilNama">Loading...</div>
-      <div class="profil-email" id="profilEmail">-</div>
-      <div class="profil-detail">
-        <span class="profil-role">
-          <svg class="icon-role" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span id="profilRole">-</span>
-        </span>
-        <span class="profil-kantor">
-          <svg class="icon-kantor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/></svg>
-          <span id="profilKantor">-</span>
-        </span>
+    <!-- HEADER ANALISIS -->
+    <div id="headerAnalisis">
+      <div class="header-title">Analisis</div>
+    </div>
+
+    <!-- CONTENT (sementara kosong) -->
+    <div id="analisisContent">
+      <p style="text-align:center; margin-top:20px;">Loading analisis...</p>
+    </div>
+
+  </div>
+</div>
+
+  <!-- ===== VIEW PROFIL ===== -->
+  <div class="view" id="view-profil">
+    <div class="page-content">
+      <!-- HEADER PROFIL FOTO -->
+      <div class="profil-header" id="profilHeader"></div>
+  
+      <div class="profil-card" id="profilCard">
+        <div class="profil-nama" id="profilNama">Loading...</div>
+        <div class="profil-email" id="profilEmail">-</div>
+        <div class="profil-detail">
+          <span class="profil-role">
+            <svg class="icon-role" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span id="profilRole">-</span>
+          </span>
+          <span class="profil-kantor">
+            <svg class="icon-kantor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/></svg>
+            <span id="profilKantor">-</span>
+          </span>
+        </div>
+      
+        <!-- Tombol ganti foto -->
+        <button id="btnGantiFoto" class="btn-ganti-foto" title="Ganti Foto">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6" width="20" height="20">
+            <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
+            <path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+  <!-- ===== CARD MENU PROFIL ===== -->
+  <div class="profil-menu-card">
+  
+    <div class="menu-item">
+      <div class="menu-left">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M5 3h14a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2z"/>
+        </svg>
+        <span class="menu-title">Persyaratan</span>
+      </div>
+  
+      <div class="menu-arrow">›</div>
+    </div>
+  
+  
+    <div class="menu-item">
+      <div class="menu-left">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 12l2 2 4-4"/>
+          <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/>
+        </svg>
+        <span class="menu-title">Persetujuan</span>
+      </div>
+  
+      <div class="menu-arrow">›</div>
+    </div>
+  
+  
+    <div class="menu-item">
+      <div class="menu-left">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span class="menu-title">Pengajuan</span>
+      </div>
+  
+      <div class="menu-arrow">›</div>
+    </div>
+    
+    <div class="menu-item" id="btnLogout">
+      <div class="menu-left">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16 17l5-5-5-5v3H9v4h7v3z"/>
+          <path d="M4 4h7v2H6v12h5v2H4z"/>
+        </svg>
+        <span class="menu-title">Logout</span>
       </div>
     
-      <!-- Tombol ganti foto -->
-      <button id="btnGantiFoto" class="btn-ganti-foto" title="Ganti Foto">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6" width="20" height="20">
-          <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
-          <path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
-        </svg>
-      </button>
+      <div class="menu-arrow">›</div>
     </div>
-<!-- ===== CARD MENU PROFIL ===== -->
-<div class="profil-menu-card">
-
-  <div class="menu-item">
-    <div class="menu-left">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M5 3h14a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2z"/>
-      </svg>
-      <span class="menu-title">Persyaratan</span>
-    </div>
-
-    <div class="menu-arrow">›</div>
   </div>
-
-
-  <div class="menu-item">
-    <div class="menu-left">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M9 12l2 2 4-4"/>
-        <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/>
-      </svg>
-      <span class="menu-title">Persetujuan</span>
-    </div>
-
-    <div class="menu-arrow">›</div>
-  </div>
-
-
-  <div class="menu-item">
-    <div class="menu-left">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 5v14M5 12h14"/>
-      </svg>
-      <span class="menu-title">Pengajuan</span>
-    </div>
-
-    <div class="menu-arrow">›</div>
-  </div>
+  <div class="popup-logout" id="popupLogout">
   
-  <div class="menu-item" id="btnLogout">
-    <div class="menu-left">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M16 17l5-5-5-5v3H9v4h7v3z"/>
-        <path d="M4 4h7v2H6v12h5v2H4z"/>
-      </svg>
-      <span class="menu-title">Logout</span>
+    <div class="popup-box">
+      <h3>Logout dari akun?</h3>
+      <p>Anda akan keluar dari aplikasi.</p>
+  
+      <div class="popup-actions">
+        <button class="btn-cancel" id="cancelLogout">Batal</button>
+        <button class="btn-ok" id="confirmLogout">Oke</button>
+      </div>
     </div>
   
-    <div class="menu-arrow">›</div>
   </div>
-</div>
-<div class="popup-logout" id="popupLogout">
-
-  <div class="popup-box">
-    <h3>Logout dari akun?</h3>
-    <p>Anda akan keluar dari aplikasi.</p>
-
-    <div class="popup-actions">
-      <button class="btn-cancel" id="cancelLogout">Batal</button>
-      <button class="btn-ok" id="confirmLogout">Oke</button>
     </div>
   </div>
-
-</div>
-  </div>
-</div>
 
 </div>
 <!-- ===== NAVBAR BOTTOM ===== -->
@@ -300,17 +318,28 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
   </div>
 
   <div class="nav-item" data-index="1" data-view="customer">
-    <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 12c-4 0-7 2-7 5v3h14v-3c0-3-3-5-7-5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+      <path d="M5.223 2.25c-.497 0-.974.198-1.325.55l-1.3 1.298A3.75 3.75 0 0 0 7.5 9.75c.627.47 1.406.75 2.25.75.844 0 1.624-.28 2.25-.75.626.47 1.406.75 2.25.75.844 0 1.623-.28 2.25-.75a3.75 3.75 0 0 0 4.902-5.652l-1.3-1.299a1.875 1.875 0 0 0-1.325-.549H5.223Z" />
+      <path fill-rule="evenodd" d="M3 20.25v-8.755c1.42.674 3.08.673 4.5 0A5.234 5.234 0 0 0 9.75 12c.804 0 1.568-.182 2.25-.506a5.234 5.234 0 0 0 2.25.506c.804 0 1.567-.182 2.25-.506 1.42.674 3.08.675 4.5.001v8.755h.75a.75.75 0 0 1 0 1.5H2.25a.75.75 0 0 1 0-1.5H3Zm3-6a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-.75.75h-3a.75.75 0 0 1-.75-.75v-3Zm8.25-.75a.75.75 0 0 0-.75.75v5.25c0 .414.336.75.75.75h3a.75.75 0 0 0 .75-.75v-5.25a.75.75 0 0 0-.75-.75h-3Z" clip-rule="evenodd" />
+    </svg>
+
     <span>Customer</span>
   </div>
 
-  <div class="nav-item" data-index="2" data-view="chatlist">
-    <svg viewBox="0 0 24 24"><path d="M4 4h16v12H5.17L4 17.17V4z"/></svg>
-    <span>Chat</span>
+  <div class="nav-item" data-index="2" data-view="analisis">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+      <path d="M12 .75a8.25 8.25 0 0 0-4.135 15.39c.686.398 1.115 1.008 1.134 1.623a.75.75 0 0 0 .577.706c.352.083.71.148 1.074.195.323.041.6-.218.6-.544v-4.661a6.714 6.714 0 0 1-.937-.171.75.75 0 1 1 .374-1.453 5.261 5.261 0 0 0 2.626 0 .75.75 0 1 1 .374 1.452 6.712 6.712 0 0 1-.937.172v4.66c0 .327.277.586.6.545.364-.047.722-.112 1.074-.195a.75.75 0 0 0 .577-.706c.02-.615.448-1.225 1.134-1.623A8.25 8.25 0 0 0 12 .75Z" />
+      <path fill-rule="evenodd" d="M9.013 19.9a.75.75 0 0 1 .877-.597 11.319 11.319 0 0 0 4.22 0 .75.75 0 1 1 .28 1.473 12.819 12.819 0 0 1-4.78 0 .75.75 0 0 1-.597-.876ZM9.754 22.344a.75.75 0 0 1 .824-.668 13.682 13.682 0 0 0 2.844 0 .75.75 0 1 1 .156 1.492 15.156 15.156 0 0 1-3.156 0 .75.75 0 0 1-.668-.824Z" clip-rule="evenodd" />
+    </svg>
+
+    <span>Analisis</span>
   </div>
 
   <div class="nav-item" data-index="3" data-view="profil">
-    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+      <path fill-rule="evenodd" d="M4.5 3.75a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V6.75a3 3 0 0 0-3-3h-15Zm4.125 3a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Zm-3.873 8.703a4.126 4.126 0 0 1 7.746 0 .75.75 0 0 1-.351.92 7.47 7.47 0 0 1-3.522.877 7.47 7.47 0 0 1-3.522-.877.75.75 0 0 1-.351-.92ZM15 8.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5H15ZM14.25 12a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H15a.75.75 0 0 1-.75-.75Zm.75 2.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5H15Z" clip-rule="evenodd" />
+    </svg>
+
     <span>Profil</span>
   </div>
 </div>
@@ -322,6 +351,7 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 <script src="home.js"></script>
 <script src="input.js"></script>
 <script src="customer.js"></script>
+<script src="analisis.js"></script>
 <script src="profil.js"></script>
 <script src="index.js"></script>
 

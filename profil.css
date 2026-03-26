@@ -2,13 +2,13 @@
   width: 100%;
   height: 180px; /* tinggi header */
   background: #b3874f; /* fallback warna */
-  border-radius: 0 0 20px 20px;
+  border-bottom: 2px solid #b3874f; /* hanya border bawah */
+  border-radius: 0 0 20px 20px; /* radius di bawah tetap */
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  border: 2px solid #b3874f;
   background-size: cover;
   background-position: center;
   display: flex;
-  align-items: flex-end; /* kalau mau teks / konten di bawah header */
+  align-items: flex-end; /* teks / konten di bawah header */
   justify-content: center;
   color: #fff;
   font-size: 24px;

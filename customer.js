@@ -53,97 +53,246 @@ function getDistance(lat1,lng1,lat2,lng2){
 
 // ====== DATA CUSTOMER GLOBAL ====== //
 window.allCustomers = [];
+window.cacheLastDataHarian = {};
+window.cacheListenerDataHarian = {};
 
 // ====== LOAD CUSTOMER ====== //
-function loadCustomer(){
+function getCustomerCacheKey(uid){
+  return "customerCache_" + uid;
+}
+function saveCustomerCache(uid, data){
+  localStorage.setItem(getCustomerCacheKey(uid), JSON.stringify({
+    data,
+    lastUpdated: Date.now()
+  }));
+}
+function getCustomerCache(uid){
+  const cache = localStorage.getItem(getCustomerCacheKey(uid));
+  return cache ? JSON.parse(cache) : null;
+}
+function listenCustomerRealtime(uid, custId, latK, lngK){
+
+  // stop listener lama biar ga double
+  if(window.customerUnsubscribe){
+    window.customerUnsubscribe();
+  }
+
+  window.customerUnsubscribe = db.collection(custId)
+    .where("pemilik","==",uid)
+    .onSnapshot(snapshot => {
+
+      console.log("🔥 Realtime update customer");
+
+      let newData = [];
+
+      snapshot.forEach(doc=>{
+        const data = doc.data();
+
+        if(!data.lokasiCustomer) return;
+
+        const latC = data.lokasiCustomer.latitude;
+        const lngC = data.lokasiCustomer.longitude;
+
+        if(latC == null || lngC == null) return;
+
+        const distance = getDistance(latC, lngC, latK, lngK);
+
+        newData.push({
+          id: doc.id,
+          data,
+          distance,
+          custId
+        });
+      });
+
+      // sort berdasarkan jarak
+      newData.sort((a,b)=>a.distance-b.distance);
+
+      // update global
+      window.allCustomers = newData;
+
+      // update cache
+      saveCustomerCache(uid, newData);
+
+      // render ulang UI
+      displayCustomers();
+    });
+}
+async function loadCustomer(){
   const container = document.getElementById("customerList");
   container.innerHTML = "Loading...";
 
-  if(!window.currentUser?.uid){
+  const uid = window.currentUser?.uid;
+  if(!uid){
     container.innerHTML = "User tidak terautentikasi";
     return;
   }
 
-  const uid = window.currentUser.uid;
+  try{
 
-  // ❌ MATIKAN LISTENER LAMA
-  if(window.customerListener){
-    window.customerListener();
-    window.customerListener = null;
-  }
+    // =========================
+    // 1. CEK CACHE
+    // =========================
+    const cache = getCustomerCache(uid);
 
-  (async () => {
-    try{
-      // ====== AMBIL DATA USER ======
-      const userDoc = await db.collection("marketing").doc(uid).get();
-      if(!userDoc.exists){
-        container.innerHTML="Data user tidak ditemukan";
-        return;
-      }
+    if(cache && cache.data){
+      console.log("⚡ Load dari cache");
 
-      const kantorCabangUser = userDoc.data().kantorCabang;
-      if(!kantorCabangUser){
-        container.innerHTML="User belum memiliki kantor cabang";
-        return;
-      }
+      window.allCustomers = cache.data;
+      displayCustomers();
 
-      // ====== AMBIL LOKASI CABANG ======
-      const cabangDoc = await db.collection("kantorCabang").doc(kantorCabangUser).get();
-      if(!cabangDoc.exists){
-        container.innerHTML="Lokasi kantor cabang tidak ditemukan";
-        return;
-      }
-
-      const lokasiCabang = cabangDoc.data().lokasiKantorCabang;
-      if(!lokasiCabang){
-        container.innerHTML="Lokasi kantor cabang belum diatur";
-        return;
-      }
-
-      const latK = lokasiCabang.latitude;
-      const lngK = lokasiCabang.longitude;
-
-      // ====== REALTIME CUSTOMER ======
-      window.customerListener = db.collection("customer")
-        .where("pemilik","==",uid)
-        .onSnapshot(snapshot => {
-
-          window.allCustomers = [];
-
-          snapshot.forEach(doc=>{
-            const data = doc.data();
-
-            if(!data.lokasiCustomer) return;
-
-            const latC = data.lokasiCustomer.latitude;
-            const lngC = data.lokasiCustomer.longitude;
-
-            if([latC,lngC].some(v=>v===undefined)) return;
-
-            const distance = getDistance(latC,lngC,latK,lngK);
-
-            window.allCustomers.push({
-              id: doc.id,
-              data,
-              distance
-            });
-          });
-
-          // 🔥 SORT SEKALI SAJA
-          window.allCustomers.sort((a,b)=>a.distance-b.distance);
-
-          displayCustomers();
-
-        }, err=>{
-          console.error(err);
-          container.innerHTML="Gagal load data";
-        });
-
-    } catch(err){
-      console.error(err);
-      container.innerHTML="Error sistem";
+      // tetap lanjut ambil data fresh + realtime
     }
-  })();
+
+    // =========================
+    // 2. AMBIL DATA USER
+    // =========================
+    const userDoc = await db.collection("marketing").doc(uid).get();
+    if(!userDoc.exists){
+      container.innerHTML="Data user tidak ditemukan";
+      return;
+    }
+
+    const userData = userDoc.data();
+    const custId = userData.custId;
+    const kantorCabang = userData.kantorCabang;
+
+    if(!custId){
+      container.innerHTML="User belum memiliki custId";
+      return;
+    }
+
+    // =========================
+    // 3. AMBIL LOKASI CABANG
+    // =========================
+    const cabangDoc = await db.collection("kantorCabang").doc(kantorCabang).get();
+    const lokasiCabang = cabangDoc.data()?.lokasiKantorCabang;
+
+    if(!lokasiCabang){
+      container.innerHTML="Lokasi cabang tidak ditemukan";
+      return;
+    }
+
+    const latK = lokasiCabang.latitude;
+    const lngK = lokasiCabang.longitude;
+
+    // =========================
+    // 4. FETCH AWAL (BIAR CEPAT)
+    // =========================
+    const snapshot = await db.collection(custId)
+      .where("pemilik","==",uid)
+      .get();
+
+    let newData = [];
+
+    snapshot.forEach(doc=>{
+      const data = doc.data();
+
+      if(!data.lokasiCustomer) return;
+
+      const latC = data.lokasiCustomer.latitude;
+      const lngC = data.lokasiCustomer.longitude;
+
+      if(latC == null || lngC == null) return;
+
+      const distance = getDistance(latC, lngC, latK, lngK);
+
+      newData.push({
+        id: doc.id,
+        data,
+        distance,
+        custId
+      });
+    });
+
+    // sort
+    newData.sort((a,b)=>a.distance-b.distance);
+
+    // update global
+    window.allCustomers = newData;
+
+    // simpan cache
+    saveCustomerCache(uid, newData);
+
+    // tampilkan
+    displayCustomers();
+
+    // =========================
+    // 5. AKTIFKAN REALTIME 🔥
+    // =========================
+    listenCustomerRealtime(uid, custId, latK, lngK);
+
+  } catch(err){
+    console.error(err);
+    container.innerHTML = "Error sistem";
+  }
+}
+async function refreshCustomerFromServer(uid){
+  try{
+    console.log("🔄 Refresh background...");
+
+    const userDoc = await db.collection("marketing").doc(uid).get();
+    const userData = userDoc.data();
+
+    const custId = userData.custId;
+    const kantorCabang = userData.kantorCabang;
+
+    // ===== ambil lokasi cabang =====
+    const cabangDoc = await db.collection("kantorCabang").doc(kantorCabang).get();
+    const lokasiCabang = cabangDoc.data()?.lokasiKantorCabang;
+
+    if(!lokasiCabang) return;
+
+    const latK = lokasiCabang.latitude;
+    const lngK = lokasiCabang.longitude;
+
+    // ===== ambil data terbaru =====
+    const snapshot = await db.collection(custId)
+      .where("pemilik","==",uid)
+      .get();
+
+    let newData = [];
+
+    snapshot.forEach(doc=>{
+      const data = doc.data();
+
+      if(!data.lokasiCustomer) return;
+
+      const latC = data.lokasiCustomer.latitude;
+      const lngC = data.lokasiCustomer.longitude;
+
+      if(latC == null || lngC == null) return;
+
+      const distance = getDistance(latC, lngC, latK, lngK);
+
+      newData.push({
+        id: doc.id,
+        data,
+        distance,
+        custId
+      });
+    });
+
+    // 🔥 sort
+    newData.sort((a,b)=>a.distance-b.distance);
+
+    // =========================
+    // 2. CEK PERUBAHAN
+    // =========================
+    if(JSON.stringify(newData) !== JSON.stringify(window.allCustomers)){
+      console.log("🔥 Data berubah → update UI");
+
+      window.allCustomers = newData;
+      saveCustomerCache(uid, newData);
+      displayCustomers();
+
+    } else {
+      console.log("✅ Data sama, skip update");
+    }
+
+  } catch(err){
+    console.error("Refresh error:", err);
+  }
 }
 
 // ====== DISPLAY CUSTOMER LIST ====== //
@@ -156,7 +305,8 @@ function displayCustomers(){
     const matchHari = (hariFilter==="Semua" || c.data.hari===hariFilter);
     const matchSearch = c.data.namaCustomer.toLowerCase().includes(searchTerm) ||
                         (c.data.alamatCustomer||"").toLowerCase().includes(searchTerm);
-    return matchHari && matchSearch;
+    const isActive = c.data.status !== "nonAktif"; // <-- filter customer nonAktif
+    return matchHari && matchSearch && isActive;
   });
 
   document.getElementById("infoJumlah").textContent="Jumlah Customer: "+filtered.length;
@@ -198,7 +348,9 @@ function displayCustomers(){
       <div class="customer-info">
         <div class="nama">${data.namaCustomer}</div>
         <div class="alamat">${data.alamatCustomer || data.kantorCabang}</div>
-        <div class="alamat">Jarak: ${cust.distance.toFixed(2)} km</div>
+        <div class="alamat">
+          Jarak: ${(cust.distance ?? 0).toFixed(2)} km
+        </div>
       </div>
     
       <div class="customer-actions">
@@ -264,23 +416,72 @@ function displayCustomers(){
     // === Klik card → popup read-only dataHarian terakhir ===
     card.addEventListener("click", async ()=>{
     
-      // ===== AMBIL DATA TERAKHIR DULU =====
-      let contentHTML = `<div style="color:#333;">Belum ada data</div>`;
+      let doc;
     
       try{
-        const snapshot = await db.collection("customer").doc(cust.id)
-          .collection("dataHarian")
-          .orderBy("createdAt","desc")
-          .limit(1)
-          .get();
     
-        if(!snapshot.empty){
-          const doc = snapshot.docs[0].data();
-          const tanggal = doc.createdAt?.toDate().toLocaleDateString('id-ID',{
-            weekday:'long', day:'numeric', month:'long'
-          }) || "-";
+        // ================================
+        // 1. AMBIL DARI CACHE DULU
+        // ================================
+        if(window.cacheLastDataHarian[cust.id]){
+          doc = window.cacheLastDataHarian[cust.id];
+        }
     
-          contentHTML = `
+        // ================================
+        // 2. KALAU BELUM ADA → FETCH SEKALI
+        // ================================
+        if(!doc){
+          const snapshot = await db.collection(cust.custId).doc(cust.id)
+            .collection("dataHarian")
+            .orderBy("createdAt","desc")
+            .limit(1)
+            .get();
+    
+          if(!snapshot.empty){
+            doc = snapshot.docs[0].data();
+            window.cacheLastDataHarian[cust.id] = doc;
+          }
+        }
+    
+        // ================================
+        // 3. PASANG LISTENER REALTIME (🔥)
+        // ================================
+        if(!window.cacheListenerDataHarian[cust.id]){
+    
+          window.cacheListenerDataHarian[cust.id] = db.collection(cust.custId)
+            .doc(cust.id)
+            .collection("dataHarian")
+            .orderBy("createdAt","desc")
+            .limit(1)
+            .onSnapshot(snapshot=>{
+    
+              if(!snapshot.empty){
+                const newDoc = snapshot.docs[0].data();
+    
+                // 🔥 UPDATE CACHE OTOMATIS
+                window.cacheLastDataHarian[cust.id] = newDoc;
+    
+                console.log("Auto update cache:", cust.id);
+              }
+    
+            });
+        }
+    
+      } catch(err){
+        console.error(err);
+      }
+    
+      // ================================
+      // 4. RENDER POPUP
+      // ================================
+      let contentHTML = `<div style="color:#333;">Belum ada data</div>`;
+    
+      if(doc){
+        const tanggal = doc.createdAt?.toDate().toLocaleDateString('id-ID',{
+          weekday:'long', day:'numeric', month:'long'
+        }) || "-";
+    
+         contentHTML = `
             <div class="last-data">
               <div class="customer-stock">
                 <span class="stock-chip stock-cb">CB ${doc.lastData?.CB || 0}</span>
@@ -289,12 +490,12 @@ function displayCustomers(){
               </div>
               <div class="created-at">${tanggal}</div>
             </div>
-    
+        
             <div class="jumlah-pembayaran">
               <label>Jumlah Pembayaran</label>
-              <input type="text" readonly value="${(doc.fee?.CB||0)+(doc.fee?.BB||0)+(doc.fee?.BK||0)}">
+              <input type="text" readonly value="${doc.lastData?.bayar ?? ((doc.fee?.CB||0)+(doc.fee?.BB||0)+(doc.fee?.BK||0))}">
             </div>
-    
+        
             ${['return','expired','konsinyasi','cash','tunggakan'].map(k=>{
               return `
                 <div class="input-group ${k}">
@@ -307,28 +508,24 @@ function displayCustomers(){
                 </div>
               `;
             }).join('')}
-    
+        
             <div class="status-container">
-              ${doc.keterangan === "putus" ? 
-                `<div class="status-badge status-putus">🔴 Putus</div>` : 
-              doc.keterangan === "pending" ? 
-                `<div class="status-badge status-pending">🟡 Pending</div>` : 
-              doc.keterangan === "tutup" ? 
-                `<div class="status-badge status-tutup">⚫ Tutup</div>` : 
+              ${
+                doc.keterangan === "putus" ? `<div class="status-badge status-putus">🔴 Putus</div>` :
+                doc.keterangan === "pending" ? `<div class="status-badge status-pending">🟡 Pending</div>` :
+                doc.keterangan === "tutup" ? `<div class="status-badge status-tutup">⚫ Tutup</div>` :
                 `<div class="status-badge status-normal">🟢 Normal</div>`
               }
             </div>
-    
-            ${doc.fotoKeterangan ? `<div class="btn-foto-container"><img class="foto-preview" src="${doc.fotoKeterangan}"></div>` : ''}
+        
+            ${
+              doc.fotoKeterangan && doc.fotoKeterangan !== "null"
+              ? `<div class="btn-foto-container"><img class="foto-preview" src="${doc.fotoKeterangan}"></div>`
+              : ''
+            }
           `;
-        }
-    
-      } catch(err){
-        console.error(err);
-        contentHTML = `<div style="color:#333;">Gagal load data</div>`;
       }
     
-      // ===== BARU TAMPILKAN POPUP =====
       const popup = document.createElement("div");
       popup.className="customer-view-popup";
     
@@ -340,9 +537,7 @@ function displayCustomers(){
       `;
     
       document.body.appendChild(popup);
-      // pakai requestAnimationFrame biar animasi muncul smooth
-      requestAnimationFrame(() => popup.classList.add("show"));    
-      // klik popup = close
+      requestAnimationFrame(() => popup.classList.add("show"));
       popup.addEventListener("click", ()=>popup.remove());
     
     });
@@ -377,12 +572,11 @@ function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
   });
 }
 
-// ======= POPUP TAMBAH CUSTOMER =======
+// ======= POPUP TAMBAH CUSTOMER UNTUK MARKETING =======
 async function openNewCustomerPopup() {
   const overlay = document.createElement("div");
   overlay.className = "customer-input-popup new-customer-popup";
 
-  // Buat id unik per popup
   const uniqueId = Date.now();
 
   overlay.innerHTML = `
@@ -422,10 +616,9 @@ async function openNewCustomerPopup() {
 
       <div class="input-group foto-group">
         <div id="fotoBtn-${uniqueId}" class="btn-foto">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M12 5c-3.86 0-7 3.14-7 7s3.14 7 7 7
-                     7-3.14 7-7-3.14-7-7-7zm0 12c-2.76 0-5-2.24-5-5
-                     s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm-4-7h2v2H8v-2zm0 4h2v2H8v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+            <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
+            <path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
           </svg>
         </div>
         <input type="file" id="inputFoto-${uniqueId}" accept="image/*" capture="environment" style="display:none;">
@@ -437,7 +630,6 @@ async function openNewCustomerPopup() {
 
   document.body.appendChild(overlay);
 
-  // ===== FOTO PREVIEW =====
   const inputFoto = document.getElementById(`inputFoto-${uniqueId}`);
   const fotoBtn = document.getElementById(`fotoBtn-${uniqueId}`);
   fotoBtn.addEventListener("click", () => inputFoto.click());
@@ -450,18 +642,20 @@ async function openNewCustomerPopup() {
     }
   });
 
-  // ===== AMBIL LOKASI =====
+   // ===== AMBIL LOKASI =====
   const lokasiBtn = overlay.querySelector(".location-btn");
   lokasiBtn.addEventListener("click", async () => {
     const mapOverlay = document.createElement("div");
     mapOverlay.className = "map-popup-overlay";
   
+    // ✅ pakai container lama biar UI aman
     mapOverlay.innerHTML = `
       <div class="map-popup-container">
         <div id="map-${uniqueId}" style="width:100%;height:80vh;"></div>
         <button class="confirm-location-btn">✅ Konfirmasi Lokasi</button>
       </div>
     `;
+  
     document.body.appendChild(mapOverlay);
   
     let lat = overlay.dataset.lat || -6.338;
@@ -477,10 +671,13 @@ async function openNewCustomerPopup() {
     }
   
     const map = L.map(`map-${uniqueId}`).setView([lat, lng], 16);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
+  
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19
     }).addTo(map);
+  
     const marker = L.marker([lat, lng], {draggable:true}).addTo(map);
+  
     marker.on('dragend', e=>{
       const pos = e.target.getLatLng();
       lat = pos.lat;
@@ -490,15 +687,19 @@ async function openNewCustomerPopup() {
     mapOverlay.querySelector(".confirm-location-btn").addEventListener("click", ()=>{
       overlay.dataset.lat = lat;
       overlay.dataset.lng = lng;
+  
       lokasiBtn.textContent = "Berhasil";
       lokasiBtn.classList.add("success");
+  
       setTimeout(()=>{
         lokasiBtn.classList.remove("success");
         lokasiBtn.textContent = "Ambil Lokasi";
       },1000);
+  
       mapOverlay.remove();
     });
   
+    // ✅ penting (ini juga bikin UX enak)
     mapOverlay.addEventListener("click", e=>{
       if(e.target === mapOverlay) mapOverlay.remove();
     });
@@ -510,40 +711,42 @@ async function openNewCustomerPopup() {
     btnSimpan.dataset.loading = "true";
     btnSimpan.textContent = "Menyimpan...";
     btnSimpan.style.background = "#f0ad4e";
-  
+
     try {
       const uid = window.currentUser?.uid;
       if(!uid) throw new Error("User belum login");
-  
+
       const userDoc = await db.collection("marketing").doc(uid).get();
-      const userKantorCabang = userDoc.exists ? userDoc.data().kantorCabang : null;
-  
+      if(!userDoc.exists) throw new Error("Data user tidak ditemukan");
+
+      const userData = userDoc.data();
+      const custCollection = userData?.custId;
+      if(!custCollection) throw new Error("User belum punya custId, hubungi admin");
+      const kantorCabang = userData?.kantorCabang || null;
+
       const nama = document.getElementById(`inputNamaCustomer-${uniqueId}`).value.trim();
       const cb = Number(document.getElementById(`inputCB-${uniqueId}`).value || 0);
       const bb = Number(document.getElementById(`inputBB-${uniqueId}`).value || 0);
       const bk = Number(document.getElementById(`inputBK-${uniqueId}`).value || 0);
       const alamat = document.getElementById(`inputAlamat-${uniqueId}`).value.trim();
       const jenisBayar = overlay.querySelector(`input[name="jenisBayar-${uniqueId}"]:checked`).value;
-      const lat = overlay.dataset.lat || null;
-      const lng = overlay.dataset.lng || null;
-      const fotoFile = inputFoto.files[0] || null;
-  
-      // ===== VALIDASI =====
+      const lat = overlay.dataset.lat;
+      const lng = overlay.dataset.lng;
+      const fotoFile = inputFoto.files[0];
+
       if(!nama) throw new Error("Nama customer harus diisi");
-      if(cb === 0 && bb === 0 && bk === 0) throw new Error("Stok minimal satu harus diisi");
+      if(cb+bb+bk === 0) throw new Error("Stok minimal satu harus diisi");
       if(!alamat) throw new Error("Alamat harus diisi");
-      if(!fotoFile) throw new Error("Foto customer harus diunggah");
       if(!lat || !lng) throw new Error("Lokasi harus diambil");
-  
-      // ===== PROSES FOTO =====
+      if(!fotoFile) throw new Error("Foto customer harus diunggah");
+
       const fotoBase64 = await compressImage(fotoFile);
-  
+
       const harga = { CB:5000, BB:5000, BK:4000 };
       const bayar = cb*harga.CB + bb*harga.BB + bk*harga.BK;
-  
       const lastData = { CB: cb, BB: bb, BK: bk, bayar, createdAt: firebase.firestore.Timestamp.now() };
 
-      // ===== ROOT DATA DENGAN isNew =====
+      // ===== ROOT DATA =====
       const rootData = {
         namaCustomer: nama,
         alamatCustomer: alamat,
@@ -552,13 +755,17 @@ async function openNewCustomerPopup() {
         createdAt: firebase.firestore.Timestamp.now(),
         createdBy: uid,
         hari: getHariIndonesia(),
-        kantorCabang: userKantorCabang,
+        kantorCabang,
         pemilik: uid,
+        custId: custCollection,
         lastData,
-        isNew: true // ✅ flag untuk customer baru
+        isNew: true,
+        status: "aktif"
       };
-  
-      const docRef = await db.collection("customer").add(rootData);
+
+      // Tambah document
+      const docRef = await db.collection(custCollection).add(rootData);
+
       const today = new Date().toISOString().split("T")[0];
       await docRef.collection("dataHarian").doc(today).set({
         createdAt: firebase.firestore.Timestamp.now(),
@@ -567,13 +774,14 @@ async function openNewCustomerPopup() {
         expired:{CB:0,BB:0,BK:0},
         keterangan:"null",
         fotoKeterangan:"null",
-        lastData
+        lastData,
+        custId: custCollection
       });
-  
+
       btnSimpan.textContent = "Berhasil";
       btnSimpan.style.background = "#4CAF50";
       setTimeout(()=>overlay.remove(),800);
-  
+
     } catch(err) {
       console.error(err);
       btnSimpan.textContent = `Gagal: ${err.message}`;
@@ -581,13 +789,12 @@ async function openNewCustomerPopup() {
       setTimeout(()=>{
         btnSimpan.textContent = "Simpan";
         btnSimpan.style.background = "#b3874f";
-      }, 2000);
+      },2000);
     } finally {
       delete btnSimpan.dataset.loading;
     }
   });
 
-  // ===== KLIK OUTSIDE =====
   overlay.addEventListener("click", e => {
     if(e.target === overlay) overlay.remove();
   });

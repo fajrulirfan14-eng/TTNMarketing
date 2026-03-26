@@ -22,7 +22,8 @@ window.viewInitialized = {
   home:false,
   customer:false,
   input:false,
-  profil:false
+  profil:false,
+  analisis:false // 🔥 TAMBAH INI
 };
 
 // ====== AUTH CHECK (FIX UTAMA ADA DI SINI) =====
@@ -110,9 +111,14 @@ function showView(viewName){
       window.renderCustomer?.();
       showNavbar();
       break;
-    
-    case "chatlist":
-      console.log("Chat belum dibuat");
+
+    case "analisis":
+      if(!window.viewInitialized.analisis){
+        window.initAnalisisView?.();
+        window.viewInitialized.analisis = true;
+      }
+      window.renderAnalisis?.();
+      showNavbar();
       break;
 
     case "profil":
@@ -253,7 +259,7 @@ document.addEventListener('gesturestart', function (e) {
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/service-worker.js")
+      .register("service-worker.js")
       .then(reg => {
         console.log("✅ Service Worker aktif", reg);
       })

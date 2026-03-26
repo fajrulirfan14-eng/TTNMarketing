@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#f8e9d2">
-<!-- Favicon -->
+<meta name="theme-color" content="#b3874f">
 <link rel="icon" type="image/png" sizes="32x32" href="ikon-32.png">
 <link rel="icon" type="image/png" sizes="48x48" href="ikon-48.png">
 <link rel="icon" type="image/png" sizes="512x512" href="ikon-512.png">
 <!-- Apple Touch Icon -->
 <link rel="apple-touch-icon" sizes="192x192" href="ikon-192.png">
+<link rel="manifest" href="manifest.json">
 <title>Login Marketing | Teh Tarik Nusantara</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -269,6 +269,13 @@ import {
   getAuth, 
   signInWithEmailAndPassword 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import { 
+  getFirestore, 
+  doc, 
+  getDoc 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyD8thbh1A0KKkvQ5DrdolBFI5KisPWfXKk",
   authDomain: "marketing-4141c.firebaseapp.com",
@@ -278,38 +285,89 @@ const firebaseConfig = {
   appId: "1:386014931979:web:631f056535caa664b5eb0e",
   measurementId: "G-BPENXW6HNL"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ANIMASI LOGO
 const logo = document.getElementById("logoTTN");
 logo.addEventListener("click", ()=>{
   logo.classList.remove("logo-spin");
-  /* reset animasi supaya bisa diputar lagi */
   void logo.offsetWidth;
   logo.classList.add("logo-spin");
 });
+
+// LOGIN FUNCTION
 window.login = function(){
   const email = document.getElementById("username").value;
   const password = document.getElementById("password").value;
   const btn = document.getElementById("loginBtn");
   const text = document.getElementById("btnText");
   const loader = document.getElementById("btnLoader");
-  /* tampilkan loading */
+
+  // loading ON
   text.style.display = "none";
   loader.style.display = "inline-block";
   btn.disabled = true;
+
   signInWithEmailAndPassword(auth,email,password)
-  .then((userCredential)=>{
+  .then(async (userCredential)=>{
     const user = userCredential.user;
-    console.log("Login berhasil:",user);
-    window.location.href = "index.html";
+    const uid = user.uid;
+
+    try{
+      // 🔥 CEK KE COLLECTION MARKETING
+      const docRef = doc(db, "marketing", uid);
+      const docSnap = await getDoc(docRef);
+
+      if(docSnap.exists()){
+        console.log("Login marketing berhasil");
+
+        // ✅ MASUK APP
+        window.location.href = "index.html";
+
+      }else{
+        // ❌ BUKAN MARKETING
+        document.getElementById("error-msg").innerText = "Akun bukan marketing";
+
+        text.style.display = "inline";
+        loader.style.display = "none";
+        btn.disabled = false;
+      }
+
+    }catch(err){
+      console.error(err);
+
+      document.getElementById("error-msg").innerText = "Terjadi kesalahan";
+
+      text.style.display = "inline";
+      loader.style.display = "none";
+      btn.disabled = false;
+    }
   })
   .catch((error)=>{
     document.getElementById("error-msg").innerText = "Email atau password salah";
-    /* kembalikan tombol */
+
     text.style.display = "inline";
     loader.style.display = "none";
     btn.disabled = false;
+
     console.error(error);
+  });
+}
+
+// SERVICE WORKER
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("service-worker.js")
+      .then(reg => {
+        console.log("✅ Service Worker aktif", reg);
+      })
+      .catch(err => {
+        console.log("❌ Service Worker gagal", err);
+      });
   });
 }
 </script>

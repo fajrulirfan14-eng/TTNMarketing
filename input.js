@@ -146,7 +146,9 @@ function updateStokRealtime(){
 
 }
 function applyFilterCustomer(){
-  let list = window.cacheCustomer;
+  let list = window.cacheCustomer
+    .filter(c => c.status !== "nonAktif");  // hanya tampilkan customer aktif
+  
   if(window.filterAnalisa){
     list = list.filter(c=>{
       if(!c.sudahInput) return false;
@@ -158,31 +160,42 @@ function applyFilterCustomer(){
   updateProgress(list);
 }
 
-/* ======= loadDataHarianHariIni ======= */
-async function loadDataHarianHariIni(customers){
+/* ======== loadDataHarianHariIni ======== */
+async function loadDataHarianHariIni(customers, custId){
+  if(!custId){
+    console.error("❌ custId harus diberikan ke loadDataHarianHariIni");
+    return;
+  }
+
   const today = new Date();
   const todayStr =
-    today.getFullYear()+"-"+
-    String(today.getMonth()+1).padStart(2,"0")+"-"+
-    String(today.getDate()).padStart(2,"0");
+    today.getFullYear() + "-" +
+    String(today.getMonth() + 1).padStart(2, "0") + "-" +
+    String(today.getDate()).padStart(2, "0");
+
+  // Reset cache harian
   window.cacheDataHarian = {};
-  await Promise.all(customers.map(async c=>{
-    try{
+  window.cacheCustId = custId; // simpan custId supaya bisa dipakai fungsi lain
+
+  await Promise.all(customers.map(async c => {
+    try {
       const doc = await db
-        .collection("customer")
+        .collection(custId)              // ✅ collection dinamis sesuai custId
         .doc(c.id)
         .collection("dataHarian")
         .doc(todayStr)
         .get();
+
       if(doc.exists){
         const data = doc.data();
         window.cacheDataHarian[c.id] = data;
         c.sudahInput = true;
         c.statusHariIni = (data.keterangan || "selesai").toLowerCase().trim();
-      }else{
+      } else {
         c.statusHariIni = "selesai";
       }
-    }catch(e){
+
+    } catch(e){
       console.warn("cek dataHarian gagal", e);
       c.statusHariIni = "selesai";
     }
@@ -281,70 +294,97 @@ function updateProgress(list){
 }
 
 /* ================= LOAD CUSTOMER ================= */
-async function loadCustomerInput(){
+async function loadCustomerInput() {
   const container = document.getElementById("listCustomerInput");
-  if(!container) return console.error("❌ container listCustomerInput tidak ditemukan");
+  if (!container) return console.error("❌ container listCustomerInput tidak ditemukan");
+
   const uid = window.currentUser?.uid;
-  if(!uid) return container.innerHTML = "User belum login";
+  if (!uid) return container.innerHTML = "User belum login";
+
   const hari = getHariIni();
   console.log("📅 Hari trayek:", hari);
-  if(window.cacheCustomer.length && window.cacheOwner === uid){
+
+  // Pakai cache jika ada
+  if (window.cacheCustomer.length && window.cacheOwner === uid) {
     console.log("⚡ Load dari cache");
     renderCustomer(window.cacheCustomer, "view-input");
     updateProgress(window.cacheCustomer);
     return;
   }
-  
+
   window.cacheOwner = uid;
   container.innerHTML = "Loading...";
-  try{
-    const role = window.currentUser?.role;
-    const kantorCabang = window.currentUser?.kantorCabang;
-    
-    let query = db.collection("customer");
-    
-    query = query.where("pemilik","==",uid);
-    
-    // stop listener lama
-    if(window.inputCustomerListener){
+
+  try {
+    // 1️⃣ Ambil marketing doc untuk dapat custId
+    const marketingDoc = await db.collection("marketing").doc(uid).get();
+    if (!marketingDoc.exists) {
+      container.innerHTML = "Data marketing tidak ditemukan";
+      return;
+    }
+    const custId = marketingDoc.data().custId;
+    if (!custId) {
+      container.innerHTML = "CustId marketing tidak tersedia";
+      return;
+    }
+
+    // 2️⃣ Query ke collection sesuai custId, filter hari & pemilik
+    let queryRef = db.collection(custId)
+                      .where("hari", "==", hari)
+                      .where("pemilik", "==", uid);
+
+    // Stop listener lama
+    if (window.inputCustomerListener) {
       window.inputCustomerListener();
       window.inputCustomerListener = null;
     }
-    
-    window.inputCustomerListener = query
-      .where("hari","==",hari)
-      .onSnapshot(async snapshot=>{
-        const customers = [];
-        snapshot.forEach(doc=>{
-          const data = doc.data();
-          customers.push({id:doc.id, ...data, sudahInput:false, statusHariIni:null});
-        });
-        if(customers.length === 0){
-          container.innerHTML = "Tidak ada customer";
-          window.cacheCustomer = [];
-          updateProgress();
-          return;
+
+    window.inputCustomerListener = queryRef.onSnapshot(async snapshot => {
+      let customers = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.status !== "nonAktif") {
+          customers.push({ id: doc.id, ...data, sudahInput: false, statusHariIni: null });
         }
-        const namaCabang = customers[0]?.kantorCabang;
-        const cabang = await getLokasiCabang(namaCabang);
-        customers.forEach(c=>{
-          const lat = c.lokasiCustomer?.latitude;
-          const lng = c.lokasiCustomer?.longitude;
-          c.jarak = (lat && lng && cabang)
-            ? hitungJarak(cabang.lat, cabang.lng, lat, lng)
-            : 9999;
-        });
-        customers.sort((a,b)=>a.jarak-b.jarak);
-        const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
-        await loadDataHarianHariIni(customers);
-        hitungClosingDariCache();
-        updateStokRealtime();
-        window.cacheCustomer = customers.sort((a,b)=>a.sudahInput ? 1 : -1);
-        renderCustomer(window.cacheCustomer, "view-input");
-        updateProgress(window.cacheCustomer);
       });
-  }catch(err){
+
+      if (customers.length === 0) {
+        container.innerHTML = "Tidak ada customer";
+        window.cacheCustomer = [];
+        updateProgress();
+        return;
+      }
+
+      // Ambil lokasi cabang
+      const namaCabang = customers[0]?.kantorCabang;
+      const cabang = await getLokasiCabang(namaCabang);
+
+      // Hitung jarak
+      customers.forEach(c => {
+        const lat = c.lokasiCustomer?.latitude;
+        const lng = c.lokasiCustomer?.longitude;
+        c.jarak = (lat && lng && cabang)
+          ? hitungJarak(cabang.lat, cabang.lng, lat, lng)
+          : 9999;
+      });
+
+      // ✅ Load data harian hari ini dengan custId
+      await loadDataHarianHariIni(customers, custId);
+
+      hitungClosingDariCache();
+      updateStokRealtime();
+
+      // Sort: sudah input di bawah, urut jarak
+      window.cacheCustomer = customers.sort((a, b) => {
+        if (a.sudahInput !== b.sudahInput) return a.sudahInput ? 1 : -1;
+        return a.jarak - b.jarak;
+      });
+
+      renderCustomer(window.cacheCustomer, "view-input");
+      updateProgress(window.cacheCustomer);
+    });
+
+  } catch (err) {
     console.error(err);
     container.innerHTML = "Error load data";
   }
@@ -610,7 +650,9 @@ async function openCustomerInputPopup(customer) {
     expired: source.expired || { CB:"", BB:"", BK:"" },
     konsinyasi: source.konsinyasi || { CB:"", BB:"", BK:"" },
     cash: source.cash || { CB:"", BB:"", BK:"" },
-    tunggakan: source.tunggakan || { CB:"", BB:"", BK:"" }
+    tunggakan: source.tunggakan || { CB:"", BB:"", BK:"" },
+    fee: source.fee || { CB:"", BB:"", BK:"" },
+    disable: source.disable || { CB:"", BB:"", BK:"" }
   };
   const colors = {
     return:"return",
@@ -631,25 +673,33 @@ async function openCustomerInputPopup(customer) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
   }
   function hitungJumlah() {
-    const cbTotal =
+    const cbQty =
       ((Number(tagihan.CB) || 0)
       - (Number(categories.return.CB) || 0)
       - (Number(categories.expired.CB) || 0)
       + (Number(categories.cash.CB) || 0)
-      - (Number(categories.tunggakan.CB) || 0)) * harga.CB;
-    const bbTotal =
+      - (Number(categories.tunggakan.CB) || 0)
+      + (Number(categories.fee.CB) || 0));
+  
+    const bbQty =
       ((Number(tagihan.BB) || 0)
       - (Number(categories.return.BB) || 0)
       - (Number(categories.expired.BB) || 0)
       + (Number(categories.cash.BB) || 0)
-      - (Number(categories.tunggakan.BB) || 0)) * harga.BB;
-    const bkTotal =
+      - (Number(categories.tunggakan.BB) || 0)
+      + (Number(categories.fee.BB) || 0));
+  
+    const bkQty =
       ((Number(tagihan.BK) || 0)
       - (Number(categories.return.BK) || 0)
       - (Number(categories.expired.BK) || 0)
       + (Number(categories.cash.BK) || 0)
-      - (Number(categories.tunggakan.BK) || 0)) * harga.BK;
-    return cbTotal + bbTotal + bkTotal;
+      - (Number(categories.tunggakan.BK) || 0)
+      + (Number(categories.fee.BK) || 0));
+  
+    return (cbQty * harga.CB) +
+           (bbQty * harga.BB) +
+           (bkQty * harga.BK);
   }
   function validasiForm(){
     const konsinyasiInputs = popup.querySelectorAll('.input-group.konsinyasi input');
@@ -883,102 +933,121 @@ async function openCustomerInputPopup(customer) {
     r.addEventListener("change", updateBtnKirim);
   });
   const btnKirim = popup.querySelector("#btnKirim");
-  btnKirim.addEventListener("click", async ()=>{
+  btnKirim.addEventListener("click", async () => {
     if(!validasiForm()){
       btnKirim.textContent = "Gagal, cek input";
-      setTimeout(()=>{
+      setTimeout(() => {
         btnKirim.textContent = "Kirim";
         btnKirim.dataset.loading = "";
-      },2000);
+      }, 2000);
       return;
     }
     if(btnKirim.dataset.loading) return;
     btnKirim.dataset.loading = "true";
     btnKirim.textContent = "Loading...";
-    try{
+  
+    try {
+      const custId = window.cacheCustId;
+      if(!custId){
+        throw new Error("❌ custId belum tersedia, loadDataHarianHariIni belum dijalankan");
+      }
+  
       const status = popup.querySelector(
         'input[name="statusToko"]:checked'
       )?.value || null;
+  
       let fotoBase64 = null;
       if(fotoFile){
         fotoBase64 = await fileToBase64(fotoFile);
       }
+  
       const now = new Date();
       const tanggal =
-        now.getFullYear()+"-"+
-        String(now.getMonth()+1).padStart(2,"0")+"-"+
-        String(now.getDate()).padStart(2,"0");
+        now.getFullYear() + "-" +
+        String(now.getMonth() + 1).padStart(2, "0") + "-" +
+        String(now.getDate()).padStart(2, "0");
+  
       const lastDataBaru = {
-        CB:(categories.konsinyasi.CB||0)+(categories.tunggakan.CB||0),
-        BB:(categories.konsinyasi.BB||0)+(categories.tunggakan.BB||0),
-        BK:(categories.konsinyasi.BK||0)+(categories.tunggakan.BK||0),
-        bayar:hitungJumlah(),
-        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        CB: (categories.konsinyasi.CB || 0) + (categories.tunggakan.CB || 0),
+        BB: (categories.konsinyasi.BB || 0) + (categories.tunggakan.BB || 0),
+        BK: (categories.konsinyasi.BK || 0) + (categories.tunggakan.BK || 0),
+        bayar: hitungJumlah(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+  
       const dataHarian = {
-        createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-        lastData:tagihan,
-        return:categories.return,
-        expired:categories.expired,
-        konsinyasi:categories.konsinyasi,
-        cash:categories.cash,
-        tunggakan:categories.tunggakan,
-        fotoKeterangan:fotoBase64,
-        keterangan:status
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastData: tagihan,
+        return: categories.return,
+        expired: categories.expired,
+        konsinyasi: categories.konsinyasi,
+        cash: categories.cash,
+        tunggakan: categories.tunggakan,
+        fotoKeterangan: fotoBase64,
+        keterangan: status
       };
+  
       const db = firebase.firestore();
-      const ref = db.collection("customer").doc(customer.id);
+      const ref = db.collection(custId).doc(customer.id); // ✅ pakai custId
       const batch = db.batch();
-      batch.update(ref,{
-        lastData:lastDataBaru
+      batch.update(ref, {
+        lastData: lastDataBaru
       });
       batch.set(
         ref.collection("dataHarian").doc(tanggal),
         dataHarian
       );
+  
       await batch.commit();
+  
+      // Update cacheClosingHariIni
       const tambahCB =
-        (categories.konsinyasi.CB||0)
-        - (categories.return.CB||0)
-        + (categories.cash.CB||0)
-        + ((window.cacheDataHarian[customer.id]?.fee?.CB)||0)
-        + ((window.cacheDataHarian[customer.id]?.disable?.CB)||0);
-      const tambahBB =
-        (categories.konsinyasi.BB||0)
-        - (categories.return.BB||0)
-        + (categories.cash.BB||0)
-        + ((window.cacheDataHarian[customer.id]?.fee?.BB)||0)
-        + ((window.cacheDataHarian[customer.id]?.disable?.BB)||0);
-      const tambahBK =
-        (categories.konsinyasi.BK||0)
-        - (categories.return.BK||0)
-        + (categories.cash.BK||0)
-        + ((window.cacheDataHarian[customer.id]?.fee?.BK)||0)
-        + ((window.cacheDataHarian[customer.id]?.disable?.BK)||0);
+      (categories.konsinyasi.CB || 0)
+      - (categories.return.CB || 0)
+      + (categories.cash.CB || 0)
+      + (categories.fee.CB || 0)
+      + (categories.disable.CB || 0);
+    
+    const tambahBB =
+      (categories.konsinyasi.BB || 0)
+      - (categories.return.BB || 0)
+      + (categories.cash.BB || 0)
+      + (categories.fee.BB || 0)
+      + (categories.disable.BB || 0);
+    
+    const tambahBK =
+      (categories.konsinyasi.BK || 0)
+      - (categories.return.BK || 0)
+      + (categories.cash.BK || 0)
+      + (categories.fee.BK || 0)
+      + (categories.disable.BK || 0);
+  
       window.cacheClosingHariIni.CB += tambahCB;
       window.cacheClosingHariIni.BB += tambahBB;
       window.cacheClosingHariIni.BK += tambahBK;
+  
       updateStokRealtime();
+  
+      // Update cache data
       window.cacheDataHarian[customer.id] = dataHarian;
       customer.sudahInput = true;
       customer.statusHariIni = status || "selesai";
-      window.cacheCustomer.sort((a,b)=>{
-        if(a.sudahInput === b.sudahInput) return 0;
-        return a.sudahInput ? 1 : -1;
-      });
+  
+      // Sort dan render customer
+      window.cacheCustomer.sort((a,b) => a.sudahInput === b.sudahInput ? 0 : (a.sudahInput ? 1 : -1));
       renderCustomer(window.cacheCustomer);
       updateProgress(window.cacheCustomer);
+  
       btnKirim.textContent = "Sukses ✓";
-      setTimeout(()=>{
-        popup.remove();
-      },800);
-    }catch(err){
+      setTimeout(() => popup.remove(), 800);
+  
+    } catch(err){
       console.error(err);
       btnKirim.textContent = "Gagal, coba cek lagi";
-      setTimeout(()=>{
+      setTimeout(() => {
         btnKirim.textContent = "Kirim";
         btnKirim.dataset.loading = "";
-      },2000);
+      }, 2000);
     }
   });
   popup.addEventListener("click", e => {
@@ -1002,6 +1071,28 @@ function hitungExpiredHariIni(){
     BK: expBK
   }
 }
+function hitungFeeDisableHariIni(){
+  let feeCB = 0, feeBB = 0, feeBK = 0;
+  let disCB = 0, disBB = 0, disBK = 0;
+
+  Object.values(window.cacheDataHarian).forEach(d=>{
+    const fee = d.fee || {};
+    const dis = d.disable || {};
+
+    feeCB += fee.CB || 0;
+    feeBB += fee.BB || 0;
+    feeBK += fee.BK || 0;
+
+    disCB += dis.CB || 0;
+    disBB += dis.BB || 0;
+    disBK += dis.BK || 0;
+  });
+
+  return {
+    fee: { CB: feeCB, BB: feeBB, BK: feeBK },
+    disable: { CB: disCB, BB: disBB, BK: disBK }
+  };
+}
 function hitungPembayaranHariIni(){
   let total = 0
   const sekarang = new Date()
@@ -1021,121 +1112,151 @@ function hitungPembayaranHariIni(){
   return total
 }
 function openBawaBarangPopup(data){
-  const expired = hitungExpiredHariIni()
-  const totalBayar = hitungPembayaranHariIni()
+  const expired = hitungExpiredHariIni();
+  const totalBayar = hitungPembayaranHariIni();
   const popup = document.createElement("div");
-  popup.className="customer-input-popup";
-  const CB=data?.CB||0;
-  const BB=data?.BB||0;
-  const BK=data?.BK||0;
-  const closingCB = window.cacheClosingHariIni.CB;
-  const closingBB = window.cacheClosingHariIni.BB;
-  const closingBK = window.cacheClosingHariIni.BK;
-  const jumlahClosing = closingCB + closingBB + closingBK;
-  const saldoCB = CB - closingCB;
-  const saldoBB = BB - closingBB;
-  const saldoBK = BK - closingBK;
-  let tanggal="";
+  popup.className = "customer-input-popup";
+  const { fee, disable } = hitungFeeDisableHariIni();
+
+  // Data awal customer
+  const barang = [
+    { kode: "CB", jumlah: data?.CB || 0, fee: fee.CB, disable: disable.CB },
+    { kode: "BB", jumlah: data?.BB || 0, fee: fee.BB, disable: disable.BB },
+    { kode: "BK", jumlah: data?.BK || 0, fee: fee.BK, disable: disable.BK }
+  ];
+
+  // Closing dari cache
+  const closing = {
+    CB: window.cacheClosingHariIni.CB,
+    BB: window.cacheClosingHariIni.BB,
+    BK: window.cacheClosingHariIni.BK
+  };
+
+  // Saldo & expired
+  barang.forEach(b => {
+    b.closing = closing[b.kode] || 0;
+    b.saldo = b.jumlah - b.closing;
+    b.expired = expired[b.kode] || 0;
+  });
+
+  const jumlahClosing = barang.reduce((sum, b) => sum + b.closing, 0);
+
+  // Tanggal
+  let tanggal = "";
   if(data?.createdAt){
-    const d=data.createdAt.toDate();
-    const hari=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-    const bulan=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-    tanggal=`${hari[d.getDay()]}, ${d.getDate()} ${bulan[d.getMonth()]}`;
+    const d = data.createdAt.toDate();
+    const hari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    const bulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+    tanggal = `${hari[d.getDay()]}, ${d.getDate()} ${bulan[d.getMonth()]}`;
   }
-  popup.innerHTML=`
+
+  const renderChips = (arr, key) => arr.map(b => `<span class="stock-chip stock-${b.kode.toLowerCase()}">${b.kode} ${b[key]}</span>`).join("");
+
+  popup.innerHTML = `
   <div>
-  <h1>Bawa Barang</h1>
-  <div class="last-data">
-  <div class="customer-stock">
-  <span class="stock-chip stock-cb">CB ${CB}</span>
-  <span class="stock-chip stock-bb">BB ${BB}</span>
-  <span class="stock-chip stock-bk">BK ${BK}</span>
-  </div>
-  ${tanggal ? `<div class="created-at">${tanggal}</div>` : ""}
-  </div>
-  <div class="last-data">
-    <div style="font-weight:bold">Expired</div>
-    <div class="customer-stock">
-      <span class="stock-chip stock-cb">CB ${expired.CB}</span>
-      <span class="stock-chip stock-bb">BB ${expired.BB}</span>
-      <span class="stock-chip stock-bk">BK ${expired.BK}</span>
+    <h1>Bawa Barang</h1>
+
+    <div class="last-data">
+      <div class="customer-stock">
+        ${renderChips(barang, "jumlah")}
+      </div>
+      ${tanggal ? `<div class="created-at">${tanggal}</div>` : ""}
     </div>
-  </div>
-  <div class="last-data">
-    <div style="font-weight:bold">Closing</div>
-    <div class="customer-stock">
-      <span class="stock-chip stock-cb">CB ${closingCB}</span>
-      <span class="stock-chip stock-bb">BB ${closingBB}</span>
-      <span class="stock-chip stock-bk">BK ${closingBK}</span>
+
+    <div class="last-data">
+      <div style="font-weight:bold">Expired</div>
+      <div class="customer-stock">
+        ${renderChips(barang, "expired")}
+      </div>
+
+      <div style="font-weight:bold; margin-top:5px;">Fee</div>
+      <div class="customer-stock">
+        ${renderChips(barang, "fee")}
+      </div>
+
+      <div style="font-weight:bold; margin-top:5px;">Disable</div>
+      <div class="customer-stock">
+        ${renderChips(barang, "disable")}
+      </div>
     </div>
-    <div class="created-at">Jumlah ${jumlahClosing}</div>
-  </div>
-  
-  <div class="last-data">
-    <div style="font-weight:bold">Saldo Barang</div>
-    <div class="customer-stock">
-      <span class="stock-chip stock-cb">CB ${saldoCB}</span>
-      <span class="stock-chip stock-bb">BB ${saldoBB}</span>
-      <span class="stock-chip stock-bk">BK ${saldoBK}</span>
+
+    <div class="last-data">
+      <div style="font-weight:bold">Closing</div>
+      <div class="customer-stock">
+        ${renderChips(barang, "closing")}
+      </div>
+      <div class="created-at">Jumlah ${jumlahClosing}</div>
     </div>
-  </div>
-  <div class="jumlah-pembayaran">
-    <label>Jumlah Pembayaran</label>
-    <input type="text" readonly value="${totalBayar.toLocaleString('id-ID')}">
-  </div>
-  <div class="info-text">
-        <p>*Hubungi admin jika pembawaan barang belum di-update</p>
-        <p>*Pastikan saldo barang sesuai dengan real saldo</p>
-  </div>
+
+    <div class="last-data">
+      <div style="font-weight:bold">Saldo Barang</div>
+      <div class="customer-stock">
+        ${renderChips(barang, "saldo")}
+      </div>
+    </div>
+
+    <div class="jumlah-pembayaran">
+      <label>Jumlah Pembayaran</label>
+      <input type="text" readonly value="${totalBayar.toLocaleString('id-ID')}">
+    </div>
+
+    <div class="info-text">
+      <p>*Hubungi admin jika pembawaan barang belum di-update</p>
+      <p>*Pastikan saldo barang sesuai dengan real saldo</p>
+    </div>
   </div>
   `;
+
   document.body.appendChild(popup);
-  popup.addEventListener("click",e=>{
-    if(e.target===popup) popup.remove();
+  popup.addEventListener("click", e => {
+    if(e.target === popup) popup.remove();
   });
 }
 // ===== POPUP INPUT DISABLE DAN FEE ===== //
 function openCustomerAdvancedPopup(customer){
-  const popup=document.createElement("div");
-  popup.className="customer-input-popup";
-  popup.innerHTML=`
+  const popup = document.createElement("div");
+  popup.className = "customer-input-popup";
+  popup.innerHTML = `
   <div>
-  <h1>${customer.namaCustomer}</h1>
-  <div class="input-group disable">
-  <label>Disable</label>
-  <div class="input-row">
-  <input type="number" placeholder="CB" id="disCB">
-  <input type="number" placeholder="BB" id="disBB">
-  <input type="number" placeholder="BK" id="disBK">
-  </div>
-  </div>
-  <div class="input-group fee">
-  <label>Fee</label>
-  <div class="input-row">
-  <input type="number" placeholder="CB" id="feeCB">
-  <input type="number" placeholder="BB" id="feeBB">
-  <input type="number" placeholder="BK" id="feeBK">
-  </div>
-  </div>
-  <button id="btnSimpanLanjutan">Simpan</button>
+    <h1>${customer.namaCustomer}</h1>
+    <div class="input-group disable">
+      <label>Disable</label>
+      <div class="input-row">
+        <input type="number" placeholder="CB" id="disCB">
+        <input type="number" placeholder="BB" id="disBB">
+        <input type="number" placeholder="BK" id="disBK">
+      </div>
+    </div>
+    <div class="input-group fee">
+      <label>Fee</label>
+      <div class="input-row">
+        <input type="number" placeholder="CB" id="feeCB">
+        <input type="number" placeholder="BB" id="feeBB">
+        <input type="number" placeholder="BK" id="feeBK">
+      </div>
+    </div>
+    <button id="btnSimpanLanjutan">Simpan</button>
   </div>
   `;
   document.body.appendChild(popup);
-  const btn=popup.querySelector("#btnSimpanLanjutan");
+
+  const btn = popup.querySelector("#btnSimpanLanjutan");
   const disCB = popup.querySelector("#disCB");
   const disBB = popup.querySelector("#disBB");
   const disBK = popup.querySelector("#disBK");
   const feeCB = popup.querySelector("#feeCB");
   const feeBB = popup.querySelector("#feeBB");
   const feeBK = popup.querySelector("#feeBK");
+
   const today = new Date();
   const tanggal =
     today.getFullYear()+"-"+
     String(today.getMonth()+1).padStart(2,"0")+"-"+
     String(today.getDate()).padStart(2,"0");
-  /* =========================
-     LOAD DARI CACHE (INSTANT)
-  ========================= */
+
+  // =========================
+  // LOAD DARI CACHE (INSTANT)
+  // =========================
   const dataHariIni = window.cacheDataHarian?.[customer.id];
   if(dataHariIni){
     if(dataHariIni.disable){
@@ -1149,13 +1270,15 @@ function openCustomerAdvancedPopup(customer){
       feeBK.value = dataHariIni.fee.BK || "";
     }
   }
-  /* =========================
-     SIMPAN DATA
-  ========================= */
+
+  // =========================
+  // SIMPAN DATA KE SUBCOLLECTION dataHarian DI COLLECTION custId
+  // =========================
   btn.addEventListener("click", async ()=>{
     if(btn.dataset.loading) return;
-    btn.dataset.loading="true";
-    btn.textContent="Loading...";
+    btn.dataset.loading = "true";
+    btn.textContent = "Loading...";
+
     const disable = {
       CB: Number(disCB.value || 0),
       BB: Number(disBB.value || 0),
@@ -1166,80 +1289,123 @@ function openCustomerAdvancedPopup(customer){
       BB: Number(feeBB.value || 0),
       BK: Number(feeBK.value || 0)
     };
+
     try{
+      const custId = customer.custId || window.currentCustId;
+      if(!custId) throw new Error("CustId tidak tersedia");
+
       await db
-        .collection("customer")
+        .collection(custId)
         .doc(customer.id)
         .collection("dataHarian")
         .doc(tanggal)
         .set({
           disable: disable,
           fee: fee
-        }, { merge:true });
-      /* =========================
-         UPDATE CACHE
-      ========================= */
+        }, { merge: true });
+
+      // =========================
+      // UPDATE CACHE
+      // =========================
       if(!window.cacheDataHarian[customer.id]){
         window.cacheDataHarian[customer.id] = {};
       }
       window.cacheDataHarian[customer.id].disable = disable;
       window.cacheDataHarian[customer.id].fee = fee;
-      btn.textContent="Berhasil ✓";
+
+      btn.textContent = "Berhasil ✓";
       setTimeout(()=>{
         popup.remove();
-      },800);
+      }, 800);
     }catch(err){
       console.error(err);
-      btn.textContent="Gagal";
+      btn.textContent = "Gagal";
       setTimeout(()=>{
-        btn.textContent="Simpan";
-        btn.dataset.loading="";
-      },1000);
+        btn.textContent = "Simpan";
+        btn.dataset.loading = "";
+      }, 1000);
     }
   });
-  popup.addEventListener("click",e=>{
-    if(e.target===popup) popup.remove();
+
+  popup.addEventListener("click", e=>{
+    if(e.target === popup) popup.remove();
   });
 }
+function saveFeeDisable(customerId, newFee, newDisable){
+  if(!window.cacheDataHarian[customerId]){
+    window.cacheDataHarian[customerId] = {};
+  }
+  window.cacheDataHarian[customerId].fee = newFee;
+  window.cacheDataHarian[customerId].disable = newDisable;
+
+  const custId = window.cacheCustId;
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  db.collection(custId)
+    .doc(customerId)
+    .collection("dataHarian")
+    .doc(todayStr)
+    .set({
+      fee: newFee,
+      disable: newDisable
+    }, { merge:true });
+  
+  hitungClosingDariCache();
+  updateStokRealtime();
+}
 // ===== POPUP CATATAN ===== //
-function openCatatanPopup(data){
+window.openCatatanPopup = async function(customer) {
+  if(!customer) return;
+
   const overlay = document.createElement("div");
   overlay.className = "catatan-overlay";
   overlay.innerHTML = `
     <div class="catatan-box">
-      <h1>${data.namaCustomer}</h1>
-      <textarea 
-        id="catatanField"
-        placeholder="Catatan..."
-      >${data.catatan || ""}</textarea>
+      <h1>${customer.namaCustomer || "-"}</h1>
+      <textarea id="catatanField" placeholder="Catatan...">${customer.catatan || ""}</textarea>
       <button id="btnSimpanCatatan">Simpan</button>
     </div>
   `;
   document.body.appendChild(overlay);
-  overlay.addEventListener("click",e=>{
+
+  overlay.addEventListener("click", e => {
     if(e.target === overlay) overlay.remove();
   });
-  document
-  .getElementById("btnSimpanCatatan")
-  .addEventListener("click", async ()=>{
-    const value = document
-      .getElementById("catatanField")
-      .value
-      .trim();
-    try{
-      await db.collection("customer")
-      .doc(data.id)
-      .update({
-        catatan: value
-      });
-      // update cache
-      data.catatan = value;
-      renderCustomer(window.cacheCustomer);
+
+  document.getElementById("btnSimpanCatatan").addEventListener("click", async () => {
+    const value = document.getElementById("catatanField").value.trim();
+
+    if(!window.currentUser?.uid){
+      showAlert("User belum login","error");
+      return;
+    }
+
+    try {
+      const marketingDoc = await db.collection("marketing")
+        .doc(window.currentUser.uid).get();
+
+      if(!marketingDoc.exists){
+        showAlert("Data marketing tidak ditemukan","error");
+        return;
+      }
+
+      const custId = marketingDoc.data().custId;
+      if(!custId){
+        showAlert("CustId tidak tersedia","error");
+        return;
+      }
+
+      await db.collection(custId).doc(customer.id).set(
+        { catatan: value },
+        { merge: true }
+      );
+
       overlay.remove();
       showAlert("Catatan berhasil disimpan","success");
-    }catch(err){
+
+    } catch(err){
       console.error(err);
       showAlert("Gagal menyimpan catatan","error");
     }
   });
-}
+};

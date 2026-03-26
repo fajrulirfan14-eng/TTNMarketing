@@ -1,11 +1,13 @@
 let filterHariCatatan = null;
 
-// ====== INIT HOME VIEW ===== //
-window.initHomeView = function() {
+// ====== INIT HOME VIEW & GET CUSTID===== //
+window.initHomeView = async function() {
   if(window.homeInitialized) return;
   window.homeInitialized = true;
 
   console.log("🏠 Home view inisialisasi");
+
+  getCustId(); // ✅ sekarang valid
 
   loadMarketing();
   loadCustomerCatatanHariIni();
@@ -21,7 +23,21 @@ window.initHomeView = function() {
 
   initFilterHari();
 };
+async function getCustId(){
+  if(window.custIdGlobal) return window.custIdGlobal;
 
+  const uid = window.currentUser?.uid;
+  if(!uid) throw new Error("User belum login");
+
+  const userDoc = await db.collection("marketing").doc(uid).get();
+  if(!userDoc.exists) throw new Error("User tidak ditemukan");
+
+  const custId = userDoc.data().custId;
+  if(!custId) throw new Error("custId tidak ada");
+
+  window.custIdGlobal = custId; // 🔥 simpan cache
+  return custId;
+}
 // ====== INIT POPUP FILTER ===== //
 function initFilterHari() {
   const btn = document.getElementById("btnFilterHari");
@@ -171,57 +187,68 @@ async function loadMarketing() {
 }
 
 // ====== LOAD CUSTOMER CATATAN ===== //
-function loadCustomerCatatanHariIni(){
+async function loadCustomerCatatanHariIni(){
   const listEl = document.getElementById("customerNoteList");
   if(!listEl) return;
 
   const uid = window.currentUser?.uid;
   if(!uid) return;
 
-  const hariNama = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-  const hariIni = hariNama[new Date().getDay()];
-  const hariFilter = filterHariCatatan ?? hariIni;
+  listEl.innerHTML = "Loading...";
 
-  // ❌ matikan listener lama
-  if(window.customerListener){
-    window.customerListener();
-    window.customerListener = null;
-  }
+  try{
 
-  let query = db.collection("customer")
-    .where("pemilik","==",uid);
+    // ✅ pakai cache custId
+    const custId = await getCustId();
 
-  if(hariFilter !== "semua"){
-    query = query.where("hari","==",hariFilter);
-  }
+    const hariNama = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    const hariIni = hariNama[new Date().getDay()];
+    const hariFilter = filterHariCatatan ?? hariIni;
 
-  // 🔥 realtime listener baru
-  window.customerListener = query.onSnapshot(snapshot => {
-
-    let html = "";
-
-    snapshot.forEach(doc=>{
-      const data = doc.data();
-      const catatan = (data.catatan || "").trim();
-
-      if(catatan){
-        html += `
-        <div class="customer-note-item">
-          <div class="customer-note-nama">${data.namaCustomer || "-"}</div>
-          <div class="customer-note-text">${catatan}</div>
-        </div>
-        `;
-      }
-    });
-
-    if(!html){
-      html = `<div class="customer-note-empty">Tidak ada catatan</div>`;
+    // ❌ matikan listener lama
+    if(window.customerNoteListener){
+      window.customerNoteListener();
+      window.customerNoteListener = null;
     }
 
-    listEl.innerHTML = html;
+    let query = db.collection(custId)
+      .where("pemilik","==",uid);
 
-  }, err => {
-    console.error("Realtime customer error:", err);
-    listEl.innerHTML = "Gagal memuat data";
-  });
+    if(hariFilter !== "semua"){
+      query = query.where("hari","==",hariFilter);
+    }
+
+    window.customerNoteListener = query.onSnapshot(snapshot => {
+
+      let html = "";
+
+      snapshot.forEach(doc=>{
+        const data = doc.data();
+        const catatan = (data.catatan || "").trim();
+
+        if(catatan){
+          html += `
+            <div class="customer-note-item">
+              <div class="customer-note-nama">${data.namaCustomer || "-"}</div>
+              <div class="customer-note-text">${catatan}</div>
+            </div>
+          `;
+        }
+      });
+
+      if(!html){
+        html = `<div class="customer-note-empty">Tidak ada catatan</div>`;
+      }
+
+      listEl.innerHTML = html;
+
+    }, err => {
+      console.error("Realtime error:", err);
+      listEl.innerHTML = "Gagal memuat data";
+    });
+
+  } catch(err){
+    console.error(err);
+    listEl.innerHTML = err.message || "Error sistem";
+  }
 }

@@ -1,0 +1,172 @@
+/* ===== HEADER ANALISIS ===== */
+#headerAnalisis {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  color: #fff;
+  padding: 55px 16px;
+  background: #b3874f;
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.header-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: -30px;
+  letter-spacing: 0.5px;
+}
+
+/* ===== CONTENT ===== */
+#analisisContent {
+  padding: 16px;
+}
+
+/* ===== CARD ANALISIS (JUMLAH CUSTOMER) ===== */
+.card-analisis {
+  background: #fff;
+  border-radius: 22px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+
+  margin: -70px 8px 0 8px; /* floating naik */
+  position: relative;
+  z-index: 15;
+}
+
+/* judul */
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+/* row */
+.row-analisis {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  background: #f9f9f9;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.row-analisis:hover {
+  transform: scale(1.01);
+  background: #f0e0c0;
+}
+
+/* ===== WARNA STATUS ===== */
+.row-analisis.normal {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.row-analisis.warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.row-analisis.danger {
+  background: #fdecea;
+  color: #c62828;
+}
+
+/* ===============================
+   🔥 TRIKOTOMI WRAPPER (FIXED)
+================================ */
+.trikotomi-wrapper {
+  background: #fff;
+  border-radius: 20px; /* 🔥 disamain sama card atas */
+  padding: 16px;       /* 🔥 sama persis */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  margin: 12px 1px 0 1px; /* 🔥 sejajar card atas */
+  position: relative;
+  z-index: 10;
+}
+
+/* ===== TITLE ===== */
+.trikotomi-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+/* ===============================
+   🔥 SCROLL HORIZONTAL
+================================ */
+.trikotomi-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+/* scrollbar */
+.trikotomi-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.trikotomi-scroll::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+/* ===============================
+   🔥 CARD TRIKOTOMI
+================================ */
+.trikotomi-card {
+  min-width: 220px;
+  height: 220px;
+  border-radius: 16px; /* sedikit lebih kecil biar clean */
+  padding: 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* WARNA */
+.trikotomi-card.hijau {
+  background: #c8e6c9;
+}
+.trikotomi-card.kuning {
+  background: #ffe082;
+}
+.trikotomi-card.merah {
+  background: #ef9a9a;
+}
+
+/* ===============================
+   🔥 LIST CUSTOMER
+================================ */
+.trikotomi-list {
+  overflow-y: auto;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ITEM */
+.trikotomi-item {
+  background: rgba(255,255,255,0.8);
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.trikotomi-item:hover {
+  transform: scale(1.03);
+  background: #fff;
+}
