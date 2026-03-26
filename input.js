@@ -633,9 +633,9 @@ async function openCustomerInputPopup(customer) {
   const harga = window.currentUser?.harga || { CB:5000, BB:5000, BK:4000 };
   const sourceTagihan = dataHariIni?.lastData || last;
   const tagihan = {
-    CB: sourceTagihan.CB ?? "",
-    BB: sourceTagihan.BB ?? "",
-    BK: sourceTagihan.BK ?? ""
+    CB: Number(sourceTagihan.CB ?? 0),
+    BB: Number(sourceTagihan.BB ?? 0),
+    BK: Number(sourceTagihan.BK ?? 0)
   };
   let createdAtText = "";
   if(last.createdAt){
@@ -646,13 +646,13 @@ async function openCustomerInputPopup(customer) {
   }
   const source = dataHariIni || {};
   const categories = {
-    return: source.return || { CB:"", BB:"", BK:"" },
-    expired: source.expired || { CB:"", BB:"", BK:"" },
-    konsinyasi: source.konsinyasi || { CB:"", BB:"", BK:"" },
-    cash: source.cash || { CB:"", BB:"", BK:"" },
-    tunggakan: source.tunggakan || { CB:"", BB:"", BK:"" },
-    fee: source.fee || { CB:"", BB:"", BK:"" },
-    disable: source.disable || { CB:"", BB:"", BK:"" }
+    return: source.return || { CB:0, BB:0, BK:0 },
+    expired: source.expired || { CB:0, BB:0, BK:0 },
+    konsinyasi: source.konsinyasi || { CB:0, BB:0, BK:0 },
+    cash: source.cash || { CB:0, BB:0, BK:0 },
+    tunggakan: source.tunggakan || { CB:0, BB:0, BK:0 },
+    fee: source.fee || { CB:0, BB:0, BK:0 },
+    disable: source.disable || { CB:0, BB:0, BK:0 }
   };
   const colors = {
     return:"return",
@@ -968,27 +968,65 @@ async function openCustomerInputPopup(customer) {
         String(now.getDate()).padStart(2, "0");
   
       const lastDataBaru = {
-        CB: (categories.konsinyasi.CB || 0) + (categories.tunggakan.CB || 0),
-        BB: (categories.konsinyasi.BB || 0) + (categories.tunggakan.BB || 0),
-        BK: (categories.konsinyasi.BK || 0) + (categories.tunggakan.BK || 0),
+        CB: Number(categories.konsinyasi.CB || 0) + Number(categories.tunggakan.CB || 0),
+        BB: Number(categories.konsinyasi.BB || 0) + Number(categories.tunggakan.BB || 0),
+        BK: Number(categories.konsinyasi.BK || 0) + Number(categories.tunggakan.BK || 0),
         bayar: hitungJumlah(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+  
+      // ================== HITUNG PAY ==================
+      const pay = {
+        CB: (lastDataBaru.CB || 0) - (categories.expired.CB || 0) + (categories.cash.CB || 0) - (categories.tunggakan.CB || 0),
+        BB: (lastDataBaru.BB || 0) - (categories.expired.BB || 0) + (categories.cash.BB || 0) - (categories.tunggakan.BB || 0),
+        BK: (lastDataBaru.BK || 0) - (categories.expired.BK || 0) + (categories.cash.BK || 0) - (categories.tunggakan.BK || 0)
       };
   
       const dataHarian = {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastData: tagihan,
-        return: categories.return,
-        expired: categories.expired,
-        konsinyasi: categories.konsinyasi,
-        cash: categories.cash,
-        tunggakan: categories.tunggakan,
+        pay, // <-- tambahkan field pay
+        return: {
+          CB: Number(categories.return.CB || 0),
+          BB: Number(categories.return.BB || 0),
+          BK: Number(categories.return.BK || 0)
+        },
+        expired: {
+          CB: Number(categories.expired.CB || 0),
+          BB: Number(categories.expired.BB || 0),
+          BK: Number(categories.expired.BK || 0)
+        },
+        konsinyasi: {
+          CB: Number(categories.konsinyasi.CB || 0),
+          BB: Number(categories.konsinyasi.BB || 0),
+          BK: Number(categories.konsinyasi.BK || 0)
+        },
+        cash: {
+          CB: Number(categories.cash.CB || 0),
+          BB: Number(categories.cash.BB || 0),
+          BK: Number(categories.cash.BK || 0)
+        },
+        tunggakan: {
+          CB: Number(categories.tunggakan.CB || 0),
+          BB: Number(categories.tunggakan.BB || 0),
+          BK: Number(categories.tunggakan.BK || 0)
+        },
+        fee: {
+          CB: Number(categories.fee.CB || 0),
+          BB: Number(categories.fee.BB || 0),
+          BK: Number(categories.fee.BK || 0)
+        },
+        disable: {
+          CB: Number(categories.disable.CB || 0),
+          BB: Number(categories.disable.BB || 0),
+          BK: Number(categories.disable.BK || 0)
+        },
         fotoKeterangan: fotoBase64,
         keterangan: status
       };
   
       const db = firebase.firestore();
-      const ref = db.collection(custId).doc(customer.id); // ✅ pakai custId
+      const ref = db.collection(custId).doc(customer.id); 
       const batch = db.batch();
       batch.update(ref, {
         lastData: lastDataBaru
@@ -1000,40 +1038,10 @@ async function openCustomerInputPopup(customer) {
   
       await batch.commit();
   
-      // Update cacheClosingHariIni
-      const tambahCB =
-      (categories.konsinyasi.CB || 0)
-      - (categories.return.CB || 0)
-      + (categories.cash.CB || 0)
-      + (categories.fee.CB || 0)
-      + (categories.disable.CB || 0);
-    
-    const tambahBB =
-      (categories.konsinyasi.BB || 0)
-      - (categories.return.BB || 0)
-      + (categories.cash.BB || 0)
-      + (categories.fee.BB || 0)
-      + (categories.disable.BB || 0);
-    
-    const tambahBK =
-      (categories.konsinyasi.BK || 0)
-      - (categories.return.BK || 0)
-      + (categories.cash.BK || 0)
-      + (categories.fee.BK || 0)
-      + (categories.disable.BK || 0);
-  
-      window.cacheClosingHariIni.CB += tambahCB;
-      window.cacheClosingHariIni.BB += tambahBB;
-      window.cacheClosingHariIni.BK += tambahBK;
-  
-      updateStokRealtime();
-  
-      // Update cache data
+      // Update cache dan UI sama seperti sebelumnya
       window.cacheDataHarian[customer.id] = dataHarian;
       customer.sudahInput = true;
       customer.statusHariIni = status || "selesai";
-  
-      // Sort dan render customer
       window.cacheCustomer.sort((a,b) => a.sudahInput === b.sudahInput ? 0 : (a.sudahInput ? 1 : -1));
       renderCustomer(window.cacheCustomer);
       updateProgress(window.cacheCustomer);
