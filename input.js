@@ -621,47 +621,77 @@ function fileToBase64(file){
 }
 
 // ====== BUKA & LONG POPUP INPUT DAN CATATAN ====== //
+async function getLastData(customerId, customerDoc) {
+  const db = firebase.firestore();
+  
+  // Ambil subcollection dataHarian terbaru
+  const dataHarianRef = db.collection(customerId).doc(customerDoc.id).collection("dataHarian");
+  const q = dataHarianRef.orderBy("createdAt", "desc").limit(1);
+  const snapshot = await q.get();
+
+  if (!snapshot.empty) {
+    const latestDoc = snapshot.docs[0].data();
+    return latestDoc.lastData || customerDoc.lastData || {};
+  }
+
+  // Fallback ke root lastData
+  return customerDoc.lastData || {};
+}
+function hitungPayPerItem(lastData, categories, type) {
+  return (
+    Number(lastData[type] || 0)
+    - Number(categories.return[type] || 0)
+    - Number(categories.expired[type] || 0)
+    + Number(categories.cash[type] || 0)
+    - Number(categories.tunggakan[type] || 0)
+    + Number(categories.fee[type] || 0)
+  );
+}
 async function openCustomerInputPopup(customer) {
   const nama = customer.namaCustomer || "-";
-  const last = customer.lastData || {};
+  const last = await getLastData(customer.id, customer);
   const now = new Date();
   const tanggal =
-    now.getFullYear()+"-"+
-    String(now.getMonth()+1).padStart(2,"0")+"-"+
-    String(now.getDate()).padStart(2,"0");
+    now.getFullYear() + "-" +
+    String(now.getMonth() + 1).padStart(2, "0") + "-" +
+    String(now.getDate()).padStart(2, "0");
   const dataHariIni = window.cacheDataHarian[customer.id] || null;
-  const harga = window.currentUser?.harga || { CB:5000, BB:5000, BK:4000 };
+  const harga = window.currentUser?.harga || { CB: 5000, BB: 5000, BK: 4000 };
   const sourceTagihan = dataHariIni?.lastData || last;
   const tagihan = {
     CB: Number(sourceTagihan.CB ?? 0),
     BB: Number(sourceTagihan.BB ?? 0),
     BK: Number(sourceTagihan.BK ?? 0)
   };
+
+  // Tanggal last data
   let createdAtText = "";
-  if(last.createdAt){
+  if (last.createdAt) {
     const ts = last.createdAt.toDate ? last.createdAt.toDate() : new Date(last.createdAt);
-    const hariNames = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-    const bulanNames = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+    const hariNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const bulanNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     createdAtText = `${hariNames[ts.getDay()]}, ${ts.getDate()} ${bulanNames[ts.getMonth()]}`;
   }
+
   const source = dataHariIni || {};
   const categories = {
-    return: source.return || { CB:0, BB:0, BK:0 },
-    expired: source.expired || { CB:0, BB:0, BK:0 },
-    konsinyasi: source.konsinyasi || { CB:0, BB:0, BK:0 },
-    cash: source.cash || { CB:0, BB:0, BK:0 },
-    tunggakan: source.tunggakan || { CB:0, BB:0, BK:0 },
-    fee: source.fee || { CB:0, BB:0, BK:0 },
-    disable: source.disable || { CB:0, BB:0, BK:0 }
+    return: source.return || { CB: 0, BB: 0, BK: 0 },
+    expired: source.expired || { CB: 0, BB: 0, BK: 0 },
+    konsinyasi: source.konsinyasi || { CB: 0, BB: 0, BK: 0 },
+    cash: source.cash || { CB: 0, BB: 0, BK: 0 },
+    tunggakan: source.tunggakan || { CB: 0, BB: 0, BK: 0 },
+    fee: source.fee || { CB: 0, BB: 0, BK: 0 },
+    disable: source.disable || { CB: 0, BB: 0, BK: 0 }
   };
+
   const colors = {
-    return:"return",
-    expired:"expired",
-    konsinyasi:"konsinyasi",
-    cash:"cash",
-    tunggakan:"tunggakan"
+    return: "return",
+    expired: "expired",
+    konsinyasi: "konsinyasi",
+    cash: "cash",
+    tunggakan: "tunggakan"
   };
-  // LABEL UI
+
   const labelMap = {
     return: "Return",
     expired: "Expired",
@@ -669,95 +699,53 @@ async function openCustomerInputPopup(customer) {
     cash: "Cash",
     tunggakan: "Tunggakan / Tutup"
   };
-  function formatRibuan(x){
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
+
+  function formatRibuan(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
+
   function hitungJumlah() {
-    const cbQty =
-      ((Number(tagihan.CB) || 0)
-      - (Number(categories.return.CB) || 0)
-      - (Number(categories.expired.CB) || 0)
-      + (Number(categories.cash.CB) || 0)
-      - (Number(categories.tunggakan.CB) || 0)
-      + (Number(categories.fee.CB) || 0));
-  
-    const bbQty =
-      ((Number(tagihan.BB) || 0)
-      - (Number(categories.return.BB) || 0)
-      - (Number(categories.expired.BB) || 0)
-      + (Number(categories.cash.BB) || 0)
-      - (Number(categories.tunggakan.BB) || 0)
-      + (Number(categories.fee.BB) || 0));
-  
-    const bkQty =
-      ((Number(tagihan.BK) || 0)
-      - (Number(categories.return.BK) || 0)
-      - (Number(categories.expired.BK) || 0)
-      + (Number(categories.cash.BK) || 0)
-      - (Number(categories.tunggakan.BK) || 0)
-      + (Number(categories.fee.BK) || 0));
-  
-    return (cbQty * harga.CB) +
-           (bbQty * harga.BB) +
-           (bkQty * harga.BK);
+    const cbQty = hitungPayPerItem(tagihan, categories, "CB");
+    const bbQty = hitungPayPerItem(tagihan, categories, "BB");
+    const bkQty = hitungPayPerItem(tagihan, categories, "BK");
+    return (cbQty * harga.CB) + (bbQty * harga.BB) + (bkQty * harga.BK);
   }
-  function validasiForm(){
+
+  function validasiForm() {
     const konsinyasiInputs = popup.querySelectorAll('.input-group.konsinyasi input');
     const tunggakanInputs = popup.querySelectorAll('.input-group.tunggakan input');
-  
-    const status = popup.querySelector(
-      'input[name="statusToko"]:checked'
-    )?.value || null;
+    const status = popup.querySelector('input[name="statusToko"]:checked')?.value || null;
+
     let adaKonsinyasi = false;
     let adaTunggakan = false;
-    konsinyasiInputs.forEach(i=>{
-      if(i.value !== ""){
-        adaKonsinyasi = true;
-      }
-    });
-    tunggakanInputs.forEach(i=>{
-      if(i.value !== ""){
-        adaTunggakan = true;
-      }
-    });
-    // =============================
-    // RULE 1
-    // =============================
-    if(!adaKonsinyasi && !adaTunggakan){
-      return false;
-    }
-    // =============================
-    // RULE 3
-    // =============================
-    if(adaTunggakan){
-      if(!status) return false;
-      if(!fotoFile) return false;
-    }
-    // =============================
-    // RULE 2
-    // =============================
-    if(status === "tutup"){
-      if(
-        Number(categories.tunggakan.CB || 0) !== Number(tagihan.CB || 0) ||
+    konsinyasiInputs.forEach(i => { if (i.value !== "") adaKonsinyasi = true; });
+    tunggakanInputs.forEach(i => { if (i.value !== "") adaTunggakan = true; });
+
+    if (!adaKonsinyasi && !adaTunggakan) return false; // Rule 1
+    if (adaTunggakan && (!status || !fotoFile)) return false; // Rule 3
+    if (status === "tutup") { // Rule 2
+      if (Number(categories.tunggakan.CB || 0) !== Number(tagihan.CB || 0) ||
         Number(categories.tunggakan.BB || 0) !== Number(tagihan.BB || 0) ||
-        Number(categories.tunggakan.BK || 0) !== Number(tagihan.BK || 0)
-      ){
+        Number(categories.tunggakan.BK || 0) !== Number(tagihan.BK || 0)) {
         return false;
       }
     }
     return true;
   }
-  function updateBtnKirim(){
-  if(validasiForm()){
-    btnKirim.disabled = false;
-    btnKirim.style.opacity = "1";
-  }else{
-    btnKirim.disabled = true;
-    btnKirim.style.opacity = "0.5";
+
+  function updateBtnKirim() {
+    if (validasiForm()) {
+      btnKirim.disabled = false;
+      btnKirim.style.opacity = "1";
+    } else {
+      btnKirim.disabled = true;
+      btnKirim.style.opacity = "0.5";
+    }
   }
-}
+
   const popup = document.createElement("div");
   popup.className = "customer-input-popup";
+
   let html = `
     <div>
       <h1>${nama}</h1>
@@ -774,293 +762,198 @@ async function openCustomerInputPopup(customer) {
         <input type="text" value="${formatRibuan(hitungJumlah())}" readonly>
       </div>
   `;
-  for (let key of ["return","expired","konsinyasi","cash","tunggakan"]) {
+
+  for (let key of ["return", "expired", "konsinyasi", "cash", "tunggakan"]) {
     html += `
       <div class="input-group ${colors[key]}">
         <label>${labelMap[key]}</label>
         <div class="input-row">
-          <input type="number" placeholder="CB" min="0"
-            value="${categories[key].CB || ""}"
-            data-key="${key}" data-type="CB">
-          <input type="number" placeholder="BB" min="0"
-            value="${categories[key].BB || ""}"
-            data-key="${key}" data-type="BB">
-          <input type="number" placeholder="BK" min="0"
-            value="${categories[key].BK || ""}"
-            data-key="${key}" data-type="BK">
+          <input type="number" placeholder="CB" min="0" value="${categories[key].CB || ""}" data-key="${key}" data-type="CB">
+          <input type="number" placeholder="BB" min="0" value="${categories[key].BB || ""}" data-key="${key}" data-type="BB">
+          <input type="number" placeholder="BK" min="0" value="${categories[key].BK || ""}" data-key="${key}" data-type="BK">
         </div>
       </div>
     `;
   }
+
   html += `
     <div class="btn-foto-container" style="display:none">
-  <label class="btn-foto">
-  <input type="file"
-  accept="image/*"
-  capture="environment"
-  style="display:none"
-  id="cameraInput">
-  <svg viewBox="0 0 24 24">
-  <path d="M20 5h-3.2l-1.8-2H9L7.2 5H4c-1.1 0-2 .9-2 
-  2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 
-  2-2V7c0-1.1-.9-2-2-2zm-8 
-  13a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
-  </svg>
-  <span>Ambil Foto</span>
-  </label>
-  <div class="status-tunggakan" style="display:none">
-  <label class="status-item tutup">
-  <input type="radio" name="statusToko" value="tutup">
-  <span>Tutup</span>
-  </label>
-  <label class="status-item pending">
-  <input type="radio" name="statusToko" value="pending">
-  <span>Pending</span>
-  </label>
-  <label class="status-item putus">
-  <input type="radio" name="statusToko" value="putus">
-  <span>Putus</span>
-  </label>
-  </div>
-  </div>
-  <button id="btnKirim">Kirim</button>
+      <label class="btn-foto">
+        <input type="file" accept="image/*" capture="environment" style="display:none" id="cameraInput">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 5h-3.2l-1.8-2H9L7.2 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+        </svg>
+        <span>Ambil Foto</span>
+      </label>
+      <div class="status-tunggakan" style="display:none">
+        <label class="status-item tutup"><input type="radio" name="statusToko" value="tutup"><span>Tutup</span></label>
+        <label class="status-item pending"><input type="radio" name="statusToko" value="pending"><span>Pending</span></label>
+        <label class="status-item putus"><input type="radio" name="statusToko" value="putus"><span>Putus</span></label>
+      </div>
+    </div>
+    <button id="btnKirim">Kirim</button>
   </div>
   `;
+
   popup.innerHTML = html;
   document.body.appendChild(popup);
-  if(dataHariIni?.keterangan){
-    const radio = popup.querySelector(
-      `input[name="statusToko"][value="${dataHariIni.keterangan}"]`
-    );
-    if(radio) radio.checked = true;
-  }
-  if(dataHariIni?.fotoKeterangan){
-    btnFoto.innerHTML = `
-      <img src="${dataHariIni.fotoKeterangan}" class="foto-preview">
-    `;
-  }
-  /* ===== HIGHLIGHT INPUT JIKA LAST DATA = 0 ===== */
-  const bgColors = {
-    return:"#fff3cd",
-    expired:"#f8d7da",
-    konsinyasi:"#d4edda",
-    cash:"#d1ecf1",
-    tunggakan:"#e2e3ff"
-  };
-  popup.querySelectorAll(".input-group").forEach(group => {
-    let kategori =
-      group.classList.contains("return") ? "return" :
-      group.classList.contains("expired") ? "expired" :
-      group.classList.contains("konsinyasi") ? "konsinyasi" :
-      group.classList.contains("cash") ? "cash" :
-      group.classList.contains("tunggakan") ? "tunggakan" : null;
-    if(!kategori) return;
-    const inputs = group.querySelectorAll("input");
-    inputs.forEach(input => {
-      const type = input.dataset.type;
-      if(Number(tagihan[type]) === 0){
-        input.style.background = bgColors[kategori];
-      }
-    });
-  });
+
+  const btnFoto = popup.querySelector('.btn-foto');
+  const cameraInput = popup.querySelector('#cameraInput');
   const inputs = popup.querySelectorAll('.input-row input');
   const fotoContainer = popup.querySelector('.btn-foto-container');
   const statusContainer = popup.querySelector('.status-tunggakan');
   const statusRadios = popup.querySelectorAll('input[name="statusToko"]');
-  const cameraInput = popup.querySelector('#cameraInput');
-  const btnFoto = popup.querySelector('.btn-foto');
+  const pembayaranInput = popup.querySelector('.jumlah-pembayaran input');
   let fotoFile = null;
-  cameraInput.addEventListener("change", async function(){
+
+  if (dataHariIni?.keterangan) {
+    const radio = popup.querySelector(`input[name="statusToko"][value="${dataHariIni.keterangan}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (dataHariIni?.fotoKeterangan) {
+    btnFoto.innerHTML = `<img src="${dataHariIni.fotoKeterangan}" class="foto-preview">`;
+  }
+
+  // Highlight input jika last data = 0
+  const bgColors = { return: "#fff3cd", expired: "#f8d7da", konsinyasi: "#d4edda", cash: "#d1ecf1", tunggakan: "#e2e3ff" };
+  popup.querySelectorAll(".input-group").forEach(group => {
+    let kategori = ["return","expired","konsinyasi","cash","tunggakan"].find(k => group.classList.contains(k));
+    if (!kategori) return;
+    group.querySelectorAll("input").forEach(input => {
+      const type = input.dataset.type;
+      if (Number(tagihan[type]) === 0) input.style.background = bgColors[kategori];
+    });
+  });
+
+  cameraInput.addEventListener("change", async function () {
     const file = this.files[0];
-    if(!file) return;
-    // compress otomatis
-    const compressedBlob = await compressImage(file,500);
-    fotoFile = new File(
-      [compressedBlob],
-      "foto_toko.jpg",
-      {type:"image/jpeg"}
-    );
+    if (!file) return;
+    const compressedBlob = await compressImage(file, 500);
+    fotoFile = new File([compressedBlob], "foto_toko.jpg", { type: "image/jpeg" });
     const url = URL.createObjectURL(fotoFile);
-    btnFoto.innerHTML = `
-      <img src="${url}" class="foto-preview">
-    `;
+    btnFoto.innerHTML = `<img src="${url}" class="foto-preview">`;
     updateBtnKirim();
   });
-  btnFoto.addEventListener("click", function(e){
-    if(e.target.tagName === "IMG"){
-      e.preventDefault();
-      cameraInput.click();
-    }
-  });
-  function checkTunggakan(){
-  const tunggakanInputs = popup.querySelectorAll(
-  '.input-group.tunggakan input'
-  );
-  const kategoriInputs = popup.querySelectorAll(
-  '.input-group.return input, \
-   .input-group.expired input, \
-   .input-group.konsinyasi input, \
-   .input-group.cash input'
-  );
-  let adaTunggakan = false;
-  tunggakanInputs.forEach(input=>{
-    if(input.value !== ""){
-      adaTunggakan = true;
-    }
-  });
-    if(adaTunggakan){
-    fotoContainer.style.display = "block";
-    statusContainer.style.display = "flex";
-    }else{
-    fotoContainer.style.display = "none";
-    statusContainer.style.display = "none";
-    }
+
+  btnFoto.addEventListener("click", e => { if (e.target.tagName === "IMG") { e.preventDefault(); cameraInput.click(); } });
+
+  function checkTunggakan() {
+    const tunggakanInputs = popup.querySelectorAll('.input-group.tunggakan input');
+    let adaTunggakan = Array.from(tunggakanInputs).some(i => i.value !== "");
+    fotoContainer.style.display = adaTunggakan ? "block" : "none";
+    statusContainer.style.display = adaTunggakan ? "flex" : "none";
   }
-  const pembayaranInput = popup.querySelector('.jumlah-pembayaran input');
-  inputs.forEach(input=>{
-    input.addEventListener('input', (e)=>{
+
+  inputs.forEach(input => {
+    input.addEventListener('input', e => {
       const key = e.target.dataset.key;
       const type = e.target.dataset.type;
-      categories[key][type] = e.target.value
-        ? Number(e.target.value)
-        : 0;
+      categories[key][type] = e.target.value ? Number(e.target.value) : 0;
       pembayaranInput.value = formatRibuan(hitungJumlah());
       checkTunggakan();
       updateBtnKirim();
     });
   });
-  statusRadios.forEach(r=>{
-    r.addEventListener("change", updateBtnKirim);
-  });
+
+  statusRadios.forEach(r => r.addEventListener("change", updateBtnKirim));
+
   const btnKirim = popup.querySelector("#btnKirim");
+  updateBtnKirim();
+
   btnKirim.addEventListener("click", async () => {
-    if(!validasiForm()){
+    if (!validasiForm()) {
       btnKirim.textContent = "Gagal, cek input";
-      setTimeout(() => {
-        btnKirim.textContent = "Kirim";
-        btnKirim.dataset.loading = "";
-      }, 2000);
+      setTimeout(() => { btnKirim.textContent = "Kirim"; btnKirim.dataset.loading = ""; }, 2000);
       return;
     }
-    if(btnKirim.dataset.loading) return;
+    if (btnKirim.dataset.loading) return;
     btnKirim.dataset.loading = "true";
     btnKirim.textContent = "Loading...";
-  
+
     try {
       const custId = window.cacheCustId;
-      if(!custId){
-        throw new Error("❌ custId belum tersedia, loadDataHarianHariIni belum dijalankan");
-      }
-  
-      const status = popup.querySelector(
-        'input[name="statusToko"]:checked'
-      )?.value || null;
-  
-      let fotoBase64 = null;
-      if(fotoFile){
-        fotoBase64 = await fileToBase64(fotoFile);
-      }
-  
-      const now = new Date();
-      const tanggal =
-        now.getFullYear() + "-" +
-        String(now.getMonth() + 1).padStart(2, "0") + "-" +
-        String(now.getDate()).padStart(2, "0");
-  
+      if (!custId) throw new Error("❌ custId belum tersedia");
+
+      const status = popup.querySelector('input[name="statusToko"]:checked')?.value || null;
+      let fotoBase64 = fotoFile ? await fileToBase64(fotoFile) : null;
+
+      const totalBayar = hitungJumlah();
+      const pay = {
+        CB: hitungPayPerItem(tagihan, categories, "CB"),
+        BB: hitungPayPerItem(tagihan, categories, "BB"),
+        BK: hitungPayPerItem(tagihan, categories, "BK")
+      };
+      const closing = {
+        CB:
+          Number(categories.konsinyasi.CB || 0)
+          - Number(categories.return.CB || 0)
+          + Number(categories.cash.CB || 0),
+      
+        BB:
+          Number(categories.konsinyasi.BB || 0)
+          - Number(categories.return.BB || 0)
+          + Number(categories.cash.BB || 0),
+      
+        BK:
+          Number(categories.konsinyasi.BK || 0)
+          - Number(categories.return.BK || 0)
+          + Number(categories.cash.BK || 0)
+      };
       const lastDataBaru = {
         CB: Number(categories.konsinyasi.CB || 0) + Number(categories.tunggakan.CB || 0),
         BB: Number(categories.konsinyasi.BB || 0) + Number(categories.tunggakan.BB || 0),
         BK: Number(categories.konsinyasi.BK || 0) + Number(categories.tunggakan.BK || 0),
-        bayar: hitungJumlah(),
+        bayar: totalBayar, // ✅ pakai variable, bukan hitung ulang
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-  
-      // ================== HITUNG PAY ==================
-      const pay = {
-        CB: (lastDataBaru.CB || 0) - (categories.expired.CB || 0) + (categories.cash.CB || 0) - (categories.tunggakan.CB || 0),
-        BB: (lastDataBaru.BB || 0) - (categories.expired.BB || 0) + (categories.cash.BB || 0) - (categories.tunggakan.BB || 0),
-        BK: (lastDataBaru.BK || 0) - (categories.expired.BK || 0) + (categories.cash.BK || 0) - (categories.tunggakan.BK || 0)
-      };
-  
       const dataHarian = {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        lastData: tagihan,
-        pay, // <-- tambahkan field pay
-        return: {
-          CB: Number(categories.return.CB || 0),
-          BB: Number(categories.return.BB || 0),
-          BK: Number(categories.return.BK || 0)
+      
+        lastData: {
+          ...tagihan,
+          bayar: totalBayar // ✅ konsisten dengan root
         },
-        expired: {
-          CB: Number(categories.expired.CB || 0),
-          BB: Number(categories.expired.BB || 0),
-          BK: Number(categories.expired.BK || 0)
-        },
-        konsinyasi: {
-          CB: Number(categories.konsinyasi.CB || 0),
-          BB: Number(categories.konsinyasi.BB || 0),
-          BK: Number(categories.konsinyasi.BK || 0)
-        },
-        cash: {
-          CB: Number(categories.cash.CB || 0),
-          BB: Number(categories.cash.BB || 0),
-          BK: Number(categories.cash.BK || 0)
-        },
-        tunggakan: {
-          CB: Number(categories.tunggakan.CB || 0),
-          BB: Number(categories.tunggakan.BB || 0),
-          BK: Number(categories.tunggakan.BK || 0)
-        },
-        fee: {
-          CB: Number(categories.fee.CB || 0),
-          BB: Number(categories.fee.BB || 0),
-          BK: Number(categories.fee.BK || 0)
-        },
-        disable: {
-          CB: Number(categories.disable.CB || 0),
-          BB: Number(categories.disable.BB || 0),
-          BK: Number(categories.disable.BK || 0)
-        },
+      
+        pay,
+        closing, // ✅ closing masuk sini
+      
+        return: categories.return,
+        expired: categories.expired,
+        konsinyasi: categories.konsinyasi,
+        cash: categories.cash,
+        tunggakan: categories.tunggakan,
+        fee: categories.fee,
+        disable: categories.disable,
         fotoKeterangan: fotoBase64,
         keterangan: status
       };
-  
+
       const db = firebase.firestore();
-      const ref = db.collection(custId).doc(customer.id); 
+      const ref = db.collection(custId).doc(customer.id);
       const batch = db.batch();
-      batch.update(ref, {
-        lastData: lastDataBaru
-      });
-      batch.set(
-        ref.collection("dataHarian").doc(tanggal),
-        dataHarian
-      );
-  
+      batch.update(ref, { lastData: lastDataBaru });
+      batch.set(ref.collection("dataHarian").doc(tanggal), dataHarian);
       await batch.commit();
-  
-      // Update cache dan UI sama seperti sebelumnya
+
       window.cacheDataHarian[customer.id] = dataHarian;
       customer.sudahInput = true;
       customer.statusHariIni = status || "selesai";
-      window.cacheCustomer.sort((a,b) => a.sudahInput === b.sudahInput ? 0 : (a.sudahInput ? 1 : -1));
+      window.cacheCustomer.sort((a, b) => a.sudahInput === b.sudahInput ? 0 : (a.sudahInput ? 1 : -1));
       renderCustomer(window.cacheCustomer);
       updateProgress(window.cacheCustomer);
-  
+
       btnKirim.textContent = "Sukses ✓";
       setTimeout(() => popup.remove(), 800);
-  
-    } catch(err){
+
+    } catch (err) {
       console.error(err);
       btnKirim.textContent = "Gagal, coba cek lagi";
-      setTimeout(() => {
-        btnKirim.textContent = "Kirim";
-        btnKirim.dataset.loading = "";
-      }, 2000);
+      setTimeout(() => { btnKirim.textContent = "Kirim"; btnKirim.dataset.loading = ""; }, 2000);
     }
   });
-  popup.addEventListener("click", e => {
-    if(e.target === popup) popup.remove();
-  });
+
+  popup.addEventListener("click", e => { if (e.target === popup) popup.remove(); });
 }
 // ===== POPUP BAWA BARANG ===== //
 function hitungExpiredHariIni(){
