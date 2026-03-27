@@ -940,15 +940,22 @@ async function openCustomerInputPopup(customer) {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       const dataHarian = {
+        // ✅ FIELD BARU (WAJIB)
+        marketingId: window.currentUser.uid,
+        custId: custId,
+        tanggal: tanggal,
+        customerId: customer.id,
+      
+        // ✅ existing
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       
         lastData: {
           ...tagihan,
-          bayar: totalBayar // ✅ konsisten dengan root
+          bayar: totalBayar
         },
       
         pay,
-        closing, // ✅ closing masuk sini
+        closing,
       
         return: categories.return,
         expired: categories.expired,
