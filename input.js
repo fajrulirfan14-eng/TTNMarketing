@@ -134,16 +134,32 @@ function updateStokRealtime(){
 
   const closing = window.cacheClosingHariIni;
 
-  const sisaCB = (bawa.CB || 0) - (closing.CB || 0);
-  const sisaBB = (bawa.BB || 0) - (closing.BB || 0);
-  const sisaBK = (bawa.BK || 0) - (closing.BK || 0);
+  // 🔥 TAMBAHAN
+  const { fee, disable } = hitungFeeDisableHariIni();
+
+  const sisaCB =
+    (bawa.CB || 0)
+    - (closing.CB || 0)
+    - (fee.CB || 0)
+    - (disable.CB || 0);
+
+  const sisaBB =
+    (bawa.BB || 0)
+    - (closing.BB || 0)
+    - (fee.BB || 0)
+    - (disable.BB || 0);
+
+  const sisaBK =
+    (bawa.BK || 0)
+    - (closing.BK || 0)
+    - (fee.BK || 0)
+    - (disable.BK || 0);
 
   el.innerHTML = `
     <span class="cb">CB ${sisaCB}</span>
     <span class="bb">BB ${sisaBB}</span>
     <span class="bk">BK ${sisaBK}</span>
   `;
-
 }
 function applyFilterCustomer(){
   let list = window.cacheCustomer
@@ -452,6 +468,21 @@ function renderCustomer(list = [], viewId="view-input"){
       const level = cekSelisihKonsinyasi(data.id);
       if(level) badgeAnalisa = `<div class="badge-analisa ${level}"></div>`;
     }
+    // Badge Fee / Disable
+    let badgeFD = "";
+    if(data.sudahInput){
+      const d = window.cacheDataHarian?.[data.id] || {};
+      const fee = d.fee || {};
+      const dis = d.disable || {};
+    
+      const totalFD =
+        (fee.CB||0)+(fee.BB||0)+(fee.BK||0)+
+        (dis.CB||0)+(dis.BB||0)+(dis.BK||0);
+    
+      if(totalFD > 0){
+        badgeFD = `<div class="badge-fd">FD</div>`;
+      }
+    }
     // Badge NEW untuk customer baru
     let badgeNew = "";
     if(!data.sudahInput && data.isNew){
@@ -464,6 +495,7 @@ function renderCustomer(list = [], viewId="view-input"){
     item.className = data.sudahInput ? "customer-item visited" : "customer-item";
     item.innerHTML = `
       ${badgeAnalisa}
+      ${badgeFD}
       ${badgeNew}
       ${flagCatatan}
       ${fotoHTML}
@@ -1012,6 +1044,44 @@ function hitungPembayaranHariIni(){
   })
   return total
 }
+function hitungClosingDariDataHarian() {
+  let result = {
+    CB: 0,
+    BB: 0,
+    BK: 0
+  };
+
+  Object.values(window.cacheDataHarian).forEach(d => {
+    const konsinyasi = d.konsinyasi || {};
+    const ret = d.return || {};
+    const cash = d.cash || {};
+    const fee = d.fee || {};
+    const disable = d.disable || {};
+
+    result.CB +=
+      (konsinyasi.CB || 0)
+      - (ret.CB || 0)
+      + (cash.CB || 0)
+      + (fee.CB || 0)
+      + (disable.CB || 0);
+
+    result.BB +=
+      (konsinyasi.BB || 0)
+      - (ret.BB || 0)
+      + (cash.BB || 0)
+      + (fee.BB || 0)
+      + (disable.BB || 0);
+
+    result.BK +=
+      (konsinyasi.BK || 0)
+      - (ret.BK || 0)
+      + (cash.BK || 0)
+      + (fee.BK || 0)
+      + (disable.BK || 0);
+  });
+
+  return result;
+}
 function openBawaBarangPopup(data){
   const expired = hitungExpiredHariIni();
   const totalBayar = hitungPembayaranHariIni();
@@ -1026,17 +1096,18 @@ function openBawaBarangPopup(data){
     { kode: "BK", jumlah: data?.BK || 0, fee: fee.BK, disable: disable.BK }
   ];
 
-  // Closing dari cache
-  const closing = {
-    CB: window.cacheClosingHariIni.CB,
-    BB: window.cacheClosingHariIni.BB,
-    BK: window.cacheClosingHariIni.BK
-  };
+  const closing = hitungClosingDariDataHarian();
 
-  // Saldo & expired
   barang.forEach(b => {
     b.closing = closing[b.kode] || 0;
-    b.saldo = b.jumlah - b.closing;
+  
+    // 🔥 SALDO BARU (SUDAH POTONG FEE & DISABLE)
+    b.saldo =
+      (b.jumlah || 0)
+      - (b.closing || 0)
+      - (b.fee || 0)
+      - (b.disable || 0);
+  
     b.expired = expired[b.kode] || 0;
   });
 
